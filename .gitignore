@@ -1,3 +1,7 @@
 /.idea
 /*.iml
 /venv
+.Python
+bin/
+lib/
+include/
