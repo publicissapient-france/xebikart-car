@@ -1,0 +1,50 @@
+---
+
+- name: "create directory"
+  file:
+    path: "{{ user_directory }}/{{ app_name }}"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+    state: "directory"
+
+- name: "copy sources"
+  copy:
+    src: "{{ role_path }}/../../../{{ app_name }}/" # ending slash only copies content inside directory, not directory itself
+    dest: "{{ user_directory }}/{{ app_name }}"
+    owner: "{{ user }}"
+    group: "{{ user }}"
+    mode: "0700"
+  notify:
+    - restart service
+
+- name: "apply calibration values"
+  lineinfile:
+    path: "{{ user_directory }}/{{ app_name }}/config.py"
+    regexp: '^{{ item.key }} = '
+    line: '{{ item.key }} = {{ item.value }}'
+  with_items:
+    - key:  "STEERING_LEFT_PWM"
+      value: "{{ steering_left_pwm }}"
+    - key:  "STEERING_RIGHT_PWM"
+      value: "{{ steering_right_pwm }}"
+    - key:  "THROTTLE_FORWARD_PWM"
+      value: "{{ throttle_forward_pwm }}"
+    - key:  "THROTTLE_REVERSE_PWM"
+      value: "{{ throttle_reverse_pwm }}"
+  notify:
+    - restart service
+
+- name: "copy service file"
+  template:
+    src: "{{ app_name }}.service"
+    dest: "/etc/systemd/system/{{ app_name }}.service"
+    mode: "0644"
+  notify:
+    - restart service
+
+- name: "ensure service is started and enabled"
+  systemd:
+    name: "{{ app_name }}"
+    state: "started"
+    enabled: "yes"

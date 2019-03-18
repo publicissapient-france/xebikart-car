@@ -1,0 +1,9 @@
+[Unit]
+Description={{ app_name }}
+
+[Service]
+User=pi
+ExecStart={{ user_directory }}/env/bin/python {{ user_directory }}/{{ app_name }}/manage.py drive
+
+[Install]
+WantedBy=multi-user.target
