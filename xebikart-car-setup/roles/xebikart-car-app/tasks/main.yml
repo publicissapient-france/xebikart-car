@@ -12,11 +12,11 @@
   copy:
     src: "{{ role_path }}/../../../{{ app_name }}/" # ending slash only copies content inside directory, not directory itself
     dest: "{{ user_directory }}/{{ app_name }}"
+    group: "{{ group }}"
     owner: "{{ user }}"
-    group: "{{ user }}"
     mode: "0700"
   notify:
-    - restart service
+    - "restart service"
 
 - name: "apply calibration values"
   lineinfile:
@@ -33,7 +33,7 @@
     - key:  "THROTTLE_REVERSE_PWM"
       value: "{{ throttle_reverse_pwm }}"
   notify:
-    - restart service
+    - "restart service"
 
 - name: "copy service file"
   template:
@@ -41,7 +41,7 @@
     dest: "/etc/systemd/system/{{ app_name }}.service"
     mode: "0644"
   notify:
-    - restart service
+    - "restart service"
 
 - name: "ensure service is started and enabled"
   systemd:
