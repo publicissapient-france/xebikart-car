@@ -1,0 +1,11 @@
+---
+
+- name: "install os packages"
+  package:
+    name: "python-setuptools"
+    state: "present"
+
+- name: "install donkeycar package"
+  pip:
+    name: "donkeycar[pi]==2.5.8"
+    virtualenv: "{{ user_directory }}/env"

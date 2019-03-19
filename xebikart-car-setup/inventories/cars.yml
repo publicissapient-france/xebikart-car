@@ -1,0 +1,22 @@
+---
+
+all:
+
+  hosts:
+
+    car1:
+      ansible_host: "192.168.1.50"
+      steering_left_pwm: "550"
+      steering_right_pwm: "250"
+      throttle_forward_pwm: "500"
+      throttle_reverse_pwm: "150"
+
+  vars:
+
+    group: "pi"
+    user: "pi"
+    user_directory: "/home/{{ user }}"
+
+    ansible_user: "{{ user }}"
+
+    app_name: "xebikart-car-app"

@@ -1,0 +1,12 @@
+---
+
+- hosts: "all"
+  become: "yes"
+
+  environment:
+
+  vars:
+
+  roles:
+    - xebikart-car
+    - xebikart-car-app
