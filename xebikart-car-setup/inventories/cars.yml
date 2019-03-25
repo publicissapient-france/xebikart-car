@@ -5,7 +5,13 @@ all:
   hosts:
 
     car1:
-      ansible_host: "192.168.1.50"
+      ansible_host: "10.3.12.151"
+      steering_left_pwm: "550"
+      steering_right_pwm: "250"
+      throttle_forward_pwm: "500"
+      throttle_reverse_pwm: "150"
+    car2:
+      ansible_host: "10.3.12.150"
       steering_left_pwm: "550"
       steering_right_pwm: "250"
       throttle_forward_pwm: "500"
