@@ -9,4 +9,5 @@
 
   roles:
     - xebikart-car
+    - xebikart-car-ps3
     - xebikart-car-app
