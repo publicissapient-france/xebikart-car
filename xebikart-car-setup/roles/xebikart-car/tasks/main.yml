@@ -1,8 +1,9 @@
 ---
 
 - name: "install os packages"
-  package:
+  apt:
     name: "python-setuptools"
+    update_cache: "yes"
     state: "present"
 
 - name: "install donkeycar package"
