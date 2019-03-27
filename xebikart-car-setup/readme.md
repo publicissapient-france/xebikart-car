@@ -4,6 +4,8 @@ This repository contains setup configuration.
 
 ## Requirements
 
+Before deploying configuration, disk image must be configured following [these instructions](http://docs.donkeycar.com/guide/install_software/#get-the-raspberry-pi-working).
+
 ```
 pip install ansible==2.7.8
 ```
