@@ -6,7 +6,27 @@
     update_cache: "yes"
     state: "present"
 
-- name: "install donkeycar package"
+- name: "load uinput module at startup"
+  template:
+    src: "uinput.conf"
+    dest: "/etc/modules-load.d/uinput.conf"
+    mode: "0644"
+
+- name: "install DualShock 4 driver"
   pip:
-    name: "donkeycar[pi]==2.5.8"
+    name: "ds4drv"
     virtualenv: "{{ user_directory }}/env"
+
+- name: "get DualShock 4 driver permissions"
+  get_url:
+    url: "https://raw.githubusercontent.com/chrippa/ds4drv/master/udev/50-ds4drv.rules"
+    dest: "/etc/udev/rules.d/50-ds4drv.rules"
+    mode: "0700"
+  notify:
+    - "grant DualShock 4 driver permissions"
+
+- name: "ensure DualShock 4 driver is started at boot"
+  template:
+    src: "rc.local"
+    dest: "/etc/rc.local"
+    mode: "0755"
