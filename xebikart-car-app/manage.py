@@ -27,16 +27,6 @@ from donkeypart_ps3_controller import PS3JoystickController
 
 
 def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
-    """
-    Construct a working robotic vehicle from many parts.
-    Each part runs as a job in the Vehicle loop, calling either
-    it's run or run_threaded method depending on the constructor flag `threaded`.
-    All parts are updated one after another at the framerate given in
-    cfg.DRIVE_LOOP_HZ assuming each part finishes processing in a timely manner.
-    Parts may have named outputs and inputs. The framework handles passing named outputs
-    to parts requesting the same named input.
-    """
-
     V = dk.vehicle.Vehicle()
 
     clock = Timestamp()
@@ -46,9 +36,6 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     V.add(cam, outputs=['cam/image_array'], threaded=True)
 
     if use_joystick or cfg.USE_JOYSTICK_AS_DEFAULT:
-        #ctr = JoystickController(max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
-        #                         steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-        #                         auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE)
         ctr = PS3JoystickController(
             throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
             steering_scale=cfg.JOYSTICK_STEERING_SCALE,
@@ -109,7 +96,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     steering_controller = PCA9685(cfg.STEERING_CHANNEL)
     steering = PWMSteering(controller=steering_controller,
                            left_pulse=cfg.STEERING_LEFT_PWM,
-                           right_pulse=cfg.STEERING_RIGHT_PWM) 
+                           right_pulse=cfg.STEERING_RIGHT_PWM)
 
     throttle_controller = PCA9685(cfg.THROTTLE_CHANNEL)
     throttle = PWMThrottle(controller=throttle_controller,
@@ -122,7 +109,7 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
 
     # add tub to save data
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
-    types = ['image_array', 'float', 'float',  'str', 'str']
+    types = ['image_array', 'float', 'float', 'str', 'str']
 
     # multiple tubs
     # th = TubHandler(path=cfg.DATA_PATH)
@@ -187,8 +174,3 @@ if __name__ == '__main__':
         base_model_path = args['--base_model']
         cache = not args['--no_cache']
         train(cfg, tub, new_model_path, base_model_path)
-
-
-
-
-
