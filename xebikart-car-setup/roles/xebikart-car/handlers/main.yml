@@ -1,4 +1,0 @@
----
-
-- name: "grant DualShock 4 driver permissions"
-  shell: "udevadm control --reload-rules && udevadm trigger"
