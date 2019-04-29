@@ -24,6 +24,7 @@ from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.web_controller import LocalWebController
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
+import mqttClient
 
 
 def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
@@ -118,6 +119,9 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     # single tub
     tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
+
+    mqtt = mqttClient()
+    V.add(mqtt, inputs=['user/throttle'], outputs=['user/throttle'])
 
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
