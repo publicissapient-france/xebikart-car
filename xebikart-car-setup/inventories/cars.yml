@@ -11,6 +11,7 @@ all:
       throttle_forward_pwm: "500"
       throttle_reverse_pwm: "150"
       controller_color: "00ff00"
+      # controller_mac_address: "40:1B:5F:77:AC:E3"
     car2:
       ansible_host: "10.3.12.150"
       steering_left_pwm: "550"
