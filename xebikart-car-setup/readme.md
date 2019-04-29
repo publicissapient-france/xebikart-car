@@ -32,19 +32,21 @@ network={
 }
 ```
 
-## Requirements 
+## Setup App (from Desktop)
+
+### Requirements
 
 Setup ansible
 ```
 pip install ansible==2.7.8
 ```
 
-## Check setup
+### Check setup
 ```
 ansible-playbook --check --ask-pass -i inventories/cars.yml main.yml
 ```
 
-## Apply setup
+### Apply setup
 
 All cars:
 ```
@@ -65,3 +67,54 @@ Only app setup (car 2):
 ```
 ansible-playbook --ask-pass -i inventories/cars.yml -l car2 main-app.yml
 ```
+
+## Pairing a PS4 controller (from Raspberry Pi)
+
+After first setup, pi needs to be rebooted:
+```
+sudo reboot
+```
+
+After reboot, launch bluetooth command prompt:
+```
+sudo bluetoothctl
+```
+
+From bluetooth command prompt, assuming **40:1B:5F:77:AC:E3** is PS4 controller's mac address:
+```
+agent on
+default-agent
+scan on
+connect 40:1B:5F:77:AC:E3
+trust 40:1B:5F:77:AC:E3
+quit
+
+```
+
+Example output for the commands above:
+```
+(env) pi@donkeypi:~ $ sudo bluetoothctl
+[NEW] Controller B8:27:EB:87:CE:70 donkeypi [default]
+[bluetooth]# agent on
+Agent registered
+[bluetooth]# default-agent
+Default agent request successful
+[bluetooth]# scan on
+Discovery started
+[CHG] Controller B8:27:EB:87:CE:70 Discovering: yes
+[NEW] Device 40:1B:5F:77:AC:E3 Wireless Controller
+[bluetooth]# connect 40:1B:5F:77:AC:E3
+Attempting to connect to 40:1B:5F:77:AC:E3
+[CHG] Device 40:1B:5F:77:AC:E3 Connected: yes
+[CHG] Device 40:1B:5F:77:AC:E3 UUIDs: 00001124-0000-1000-8000-00805f9b34fb
+[CHG] Device 40:1B:5F:77:AC:E3 UUIDs: 00001200-0000-1000-8000-00805f9b34fb
+[CHG] Device 40:1B:5F:77:AC:E3 ServicesResolved: yes
+[CHG] Device 40:1B:5F:77:AC:E3 Paired: yes
+Connection successful
+[Wireless Controller]# trust 40:1B:5F:77:AC:E3
+[CHG] Device 40:1B:5F:77:AC:E3 Trusted: yes
+Changing 40:1B:5F:77:AC:E3 trust succeeded
+[Wireless Controller]# quit
+```
+
+Pairing needs to be done only once and is valid even after reboot.
