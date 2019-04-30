@@ -1,4 +1,5 @@
 import paho.mqtt.client as mqtt
+import json
 
 
 def on_connect(client, userdata, flags, rc):
@@ -22,12 +23,6 @@ client.connect("localhost", 1883, 60)
 
 
 class MqttPublisher:
-    # def __init__(self, *args, **kwargs):
-    #     super(MQTT, self).__init__(*args, **kwargs)
-
     def run(self, throttle):
-        rc = 0
-        while rc == 0:
-            rc = client.loop()
-            client.publish("hello/world", {"msg": throttle})
+        client.publish("throttle", json.JSONEncoder.encode(json.JSONEncoder(), {"throttle": throttle}))
         return throttle

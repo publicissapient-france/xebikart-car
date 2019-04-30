@@ -25,7 +25,7 @@ client.on_message = on_message
 client.on_subscribe = on_subscribe
 client.username_pw_set(username="admin", password="admin")
 client.connect("localhost", 1883, 60)
-client.subscribe("hello/world")
+client.subscribe("throttle")
 
 # Blocking call that processes network traffic, dispatches callbacks and
 # handles reconnecting.

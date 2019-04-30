@@ -120,8 +120,8 @@ def drive(cfg, model_path=None, use_joystick=False, use_chaos=False):
     tub = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
     V.add(tub, inputs=inputs, run_condition='recording')
 
-    mqtt = mqttClient()
-    V.add(mqtt, inputs=['user/throttle'], outputs=['user/throttle'])
+    mqtt_publisher = mqttClient.MqttPublisher()
+    V.add(mqtt_publisher, inputs=['user/throttle'], outputs=['user/throttle'])
 
     # run the vehicle
     V.start(rate_hz=cfg.DRIVE_LOOP_HZ,
