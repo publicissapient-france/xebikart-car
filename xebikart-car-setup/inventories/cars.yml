@@ -15,7 +15,7 @@ all:
     car2:
       ansible_host: "10.3.12.150"
       steering_left_pwm: "550"
-      steering_right_pwm: "250"
+      steering_right_pwm: "300"
       throttle_forward_pwm: "500"
       throttle_reverse_pwm: "150"
       controller_color: "ff0000"
