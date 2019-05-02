@@ -80,7 +80,7 @@ After reboot, launch bluetooth command prompt:
 sudo bluetoothctl
 ```
 
-From bluetooth command prompt, assuming **40:1B:5F:77:AC:E3** is PS4 controller's mac address:
+From bluetooth command prompt, assuming **40:1B:5F:77:AC:E3** is PS4 controller's mac address for Car1 (40:1B:5F:77:8E:13 for Car2) :
 ```
 agent on
 default-agent
