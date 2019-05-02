@@ -1,4 +1,5 @@
 import paho.mqtt.client as mqtt
+import config
 
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -23,9 +24,14 @@ client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 client.on_subscribe = on_subscribe
-client.username_pw_set(username="admin", password="admin")
-client.connect("localhost", 1883, 60)
-client.subscribe("throttle")
+username = config.RABBITMQ_USERNAME
+password = config.RABBITMQ_PASSWORD
+url = config.RABBITMQ_URL
+port = config.RABBITMQ_PORT
+topic = config.RABBITMQ_TOPIC
+client.username_pw_set(username=username, password=password)
+client.connect(url, port, 60)
+client.subscribe(topic)
 
 # Blocking call that processes network traffic, dispatches callbacks and
 # handles reconnecting.
