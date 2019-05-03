@@ -21,11 +21,11 @@ client.on_message = on_message
 client.on_publish = on_publish
 username = config.RABBITMQ_USERNAME
 password = config.RABBITMQ_PASSWORD
-url = config.RABBITMQ_URL
+host = config.RABBITMQ_HOST
 port = config.RABBITMQ_PORT
 topic = config.RABBITMQ_TOPIC
 client.username_pw_set(username=username, password=password)
-client.connect(url, port, 60)
+client.connect(host, port, 60)
 
 
 class MqttPublisher:

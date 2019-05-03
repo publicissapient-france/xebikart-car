@@ -38,6 +38,6 @@ AUTO_RECORD_ON_THROTTLE = True
 # MQTT
 RABBITMQ_USERNAME = "admin"
 RABBITMQ_PASSWORD = "admin"
-RABBITMQ_URL = "localhost"
+RABBITMQ_HOST = "localhost"
 RABBITMQ_PORT = 1883
 RABBITMQ_TOPIC = "xebikart-events"

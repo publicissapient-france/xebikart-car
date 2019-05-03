@@ -34,4 +34,4 @@ all:
 
     rabbitmq_username: "{{ vault_rabbitmq_username }}"
     rabbitmq_password: "{{ vault_rabbitmq_password }}"
-    rabbitmq_url: "{{ vault_rabbitmq_url }}"
+    rabbitmq_host: "{{ vault_rabbitmq_host }}"

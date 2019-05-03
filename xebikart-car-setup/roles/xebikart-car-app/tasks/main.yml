@@ -36,8 +36,8 @@
       value: "{{ rabbitmq_username }}"
     - key: "RABBITMQ_PASSWORD"
       value: "{{ rabbitmq_password }}"
-    - key: "RABBITMQ_URL"
-      value: "{{ rabbitmq_url }}"
+    - key: "RABBITMQ_HOST"
+      value: "{{ rabbitmq_host }}"
   notify:
     - "restart service"
 
