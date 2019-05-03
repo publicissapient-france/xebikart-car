@@ -31,3 +31,7 @@ all:
     ansible_python_interpreter: "/usr/bin/python3"
 
     app_name: "xebikart-car-app"
+
+    rabbitmq_username: "{{ vault_rabbitmq_username }}"
+    rabbitmq_password: "{{ vault_rabbitmq_password }}"
+    rabbitmq_url: "{{ vault_rabbitmq_url }}"

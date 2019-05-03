@@ -18,7 +18,7 @@
   notify:
     - "restart service"
 
-- name: "apply calibration values"
+- name: "apply configuration values"
   lineinfile:
     path: "{{ user_directory }}/{{ app_name }}/config.py"
     regexp: '^{{ item.key }} = '
@@ -32,6 +32,12 @@
       value: "{{ throttle_forward_pwm }}"
     - key:  "THROTTLE_REVERSE_PWM"
       value: "{{ throttle_reverse_pwm }}"
+    - key: "RABBITMQ_USERNAME"
+      value: "{{ rabbitmq_username }}"
+    - key: "RABBITMQ_PASSWORD"
+      value: "{{ rabbitmq_password }}"
+    - key: "RABBITMQ_URL"
+      value: "{{ rabbitmq_url }}"
   notify:
     - "restart service"
 
