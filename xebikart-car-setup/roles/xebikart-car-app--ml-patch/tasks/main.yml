@@ -1,0 +1,23 @@
+---
+
+- name: Disable joystick usage
+  replace:
+    path: "/home/pi/xebikart-car-app/config.py"
+    regexp: '^USE_JOYSTICK_AS_DEFAULT = True$'
+    replace: 'USE_JOYSTICK_AS_DEFAULT = False'
+
+- name: Replace SystemD service by the ML's specific
+  replace:
+    path: "/etc/systemd/system/{{ app_name }}.service"
+    regexp: '^ExecStart=/home/pi/env/bin/python /home/pi/xebikart-car-app/manage.py drive$'
+    replace: 'ExecStart=/home/pi/env/bin/python /home/pi/xebikart-car-app/manage-ml.py drive --model=/home/pi/xebikart-car-app/models/model'
+
+- name: Attempting reboot
+  shell: reboot
+  async: 1200
+  poll: 0
+
+- name: Waiting for resurection
+  wait_for_connection:
+    delay: 60
+    timeout: 300

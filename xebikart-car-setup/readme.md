@@ -68,6 +68,14 @@ Only app setup (car 2):
 ansible-playbook --ask-pass -i inventories/cars.yml -l car2 main-app.yml
 ```
 
+## Machine Learning specificities
+Only app setup (car 2) for Machine Learning purposes:
+```
+ansible-playbook --ask-pass -i inventories/cars.yml -l car2 main-app-ml.yml
+```
+
+
+
 ## Pairing a PS4 controller (from Raspberry Pi)
 
 After first setup, pi needs to be rebooted:

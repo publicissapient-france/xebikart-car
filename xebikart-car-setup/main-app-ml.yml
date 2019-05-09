@@ -1,0 +1,12 @@
+---
+
+- hosts: "all"
+  become: "yes"
+
+  environment:
+
+  vars:
+
+  roles:
+    - xebikart-car-app
+    - xebikart-car-app--ml-patch
