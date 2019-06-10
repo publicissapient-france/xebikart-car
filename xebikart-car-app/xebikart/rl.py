@@ -30,7 +30,7 @@ class SACModel:
         return steering, throttle
 
     def _apply_vae(self, img_arr):
-        return self.vae.encode(img_arr)
+        return self.vae.encode_from_raw_image(img_arr)
 
     def _add_history(self, img_after_vae):
         return np.concatenate((img_after_vae, self.command_history), axis=-1)

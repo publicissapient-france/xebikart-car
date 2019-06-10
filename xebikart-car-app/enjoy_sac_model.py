@@ -41,8 +41,14 @@ def drive(cfg, model, record=False):
             return _steering, max(min_throttle, min(max_throttle, _throttle))
         return run
 
+    def fix_throttle(_throttle):
+        def run(_steering, _):
+            return _steering, _throttle
+        return run
+
     clip_action = Lambda(clip_throttle(min_throttle=0.20, max_throttle=0.30))
-    V.add(clip_action,
+    fix_throttle_action = Lambda(fix_throttle(0.2))
+    V.add(fix_throttle_action,
           inputs=['pilot/angle', 'pilot/throttle'],
           outputs=['angle', 'throttle'])
 
@@ -60,6 +66,11 @@ def drive(cfg, model, record=False):
     V.add(steering, inputs=['angle'])
     V.add(throttle, inputs=['throttle'])
 
+    def print_angle_throttle(angle, throttle):
+        print("Angle: %s - Throttle: %s" % (str(angle), str(throttle)))
+
+    V.add(Lambda(print_angle_throttle),
+          inputs=['angle', 'throttle'])
     # single tub
     if record:
         # add tub to save data
@@ -78,5 +89,5 @@ if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
 
-    model = SACModel(vae_path=args['vae'], sac_path=args['sac'], n_command_history=20)
-    drive(cfg, model, record=args['record'])
+    model = SACModel(vae_path=args['--vae'], sac_path=args['--sac'], n_command_history=20)
+    drive(cfg, model, record=args['--record'])

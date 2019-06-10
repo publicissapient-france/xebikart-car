@@ -35,6 +35,20 @@
   notify:
     - "restart service"
 
+- name: "install system dependencies"
+  apt:
+    name: {{item}}
+    update_cache: "yes"
+    state: "present"
+  with_items:
+    - openmpi-dev
+    - libfreetype6-dev
+    - libilmbase-dev
+    - libopenexr-dev
+    - libgstreamer1.0-dev
+    - libqtgui4
+    - libqttest4
+
 - name: "install app dependencies"
   pip:
     requirements: "{{ user_directory }}/{{ app_name }}/requirements-pi.txt"
