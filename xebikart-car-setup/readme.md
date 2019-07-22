@@ -22,7 +22,7 @@ sudo dd bs=1m if=donkey_2.5.0_pi3.img of=/dev/rdiskX conv=sync
 
 Create `/wpa_supplicant.conf` file inside SD card boot volume with content like following:
 ```
-country=US
+country=FR
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
 update_config=1
 
