@@ -5,20 +5,22 @@ all:
   hosts:
 
     car1:
-      ansible_host: "10.3.12.151"
+      ansible_host: "192.168.1.101"
       steering_left_pwm: "550"
       steering_right_pwm: "250"
       throttle_forward_pwm: "500"
       throttle_reverse_pwm: "150"
       controller_color: "00ff00"
+      # network controller mac address: "B8:27:EB:85:7A:41"
       # controller_mac_address: "40:1B:5F:77:AC:E3"
     car2:
-      ansible_host: "10.3.12.150"
+      ansible_host: "192.168.1.102"
       steering_left_pwm: "550"
       steering_right_pwm: "300"
       throttle_forward_pwm: "500"
       throttle_reverse_pwm: "150"
       controller_color: "ff0000"
+      # network controller mac address: "B8:27:EB:78:31:8F"
       # controller_mac_address: "40:1B:5F:77:8E:13"
 
   vars:
