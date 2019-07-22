@@ -6,8 +6,8 @@ all:
 
     car1:
       ansible_host: "192.168.1.101"
-      steering_left_pwm: "550"
-      steering_right_pwm: "250"
+      steering_left_pwm: "485"
+      steering_right_pwm: "285"
       throttle_forward_pwm: "500"
       throttle_reverse_pwm: "150"
       controller_color: "00ff00"
@@ -15,8 +15,8 @@ all:
       # controller_mac_address: "40:1B:5F:77:AC:E3"
     car2:
       ansible_host: "192.168.1.102"
-      steering_left_pwm: "550"
-      steering_right_pwm: "300"
+      steering_left_pwm: "505"
+      steering_right_pwm: "305"
       throttle_forward_pwm: "500"
       throttle_reverse_pwm: "150"
       controller_color: "ff0000"
