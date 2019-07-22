@@ -32,6 +32,14 @@ network={
 }
 ```
 
+## Expand filesystem
+
+```
+sudo raspi-config
+```
+
+Then go to `Advanced Options` > `Expand Filesystem`
+
 ## Setup App (from Desktop)
 
 ### Requirements
