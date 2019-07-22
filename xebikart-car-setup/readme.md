@@ -76,7 +76,13 @@ Only app setup (car 2):
 ansible-playbook --ask-pass -i inventories/cars.yml -l car2 main-app.yml
 ```
 
-## Pairing a PS4 controller (from Raspberry Pi)
+## Pairing a PS4 controller
+
+### from PS4 Controller
+
+To start pairing, simultaneously press **PS** and **Share** buttons for 5 seconds.
+
+### from Raspberry Pi
 
 After first setup, pi needs to be rebooted:
 ```
@@ -88,7 +94,9 @@ After reboot, launch bluetooth command prompt:
 sudo bluetoothctl
 ```
 
-From bluetooth command prompt, assuming **40:1B:5F:77:AC:E3** is PS4 controller's mac address for Car1 (40:1B:5F:77:8E:13 for Car2) :
+From bluetooth command prompt:
+
+Car1
 ```
 agent on
 default-agent
@@ -96,7 +104,16 @@ scan on
 connect 40:1B:5F:77:AC:E3
 trust 40:1B:5F:77:AC:E3
 quit
+```
 
+Car2
+```
+agent on
+default-agent
+scan on
+connect 40:1B:5F:77:8E:13
+trust 40:1B:5F:77:8E:13
+quit
 ```
 
 Example output for the commands above:
