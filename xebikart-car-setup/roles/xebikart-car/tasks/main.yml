@@ -2,6 +2,12 @@
 
 - name: "install os packages"
   apt:
-    name: "python-setuptools"
+    name:
+      - python-setuptools
+      - libopenmpi-dev
     update_cache: "yes"
     state: "present"
+
+- name: "install python dependencies"
+  pip:
+    name: "mpi4py"
