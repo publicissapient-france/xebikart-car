@@ -33,11 +33,11 @@
     - key:  "THROTTLE_REVERSE_PWM"
       value: "{{ throttle_reverse_pwm }}"
     - key: "RABBITMQ_USERNAME"
-      value: "{{ rabbitmq_username }}"
+      value: "\"{{ rabbitmq_username }}\""
     - key: "RABBITMQ_PASSWORD"
-      value: "{{ rabbitmq_password }}"
+      value: "\"{{ rabbitmq_password }}\""
     - key: "RABBITMQ_HOST"
-      value: "{{ rabbitmq_host }}"
+      value: "\"{{ rabbitmq_host }}\""
   notify:
     - "restart service"
 
