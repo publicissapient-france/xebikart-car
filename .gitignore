@@ -6,3 +6,4 @@ bin/
 lib/
 include/
 ansible-vault
+wpa_supplicant.conf
