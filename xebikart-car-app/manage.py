@@ -21,6 +21,8 @@ from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
+import mqttClient
+
 from driver import Driver
 
 
@@ -128,6 +130,15 @@ def drive(cfg, model_path=None):
         tub_writer,
         inputs=inputs,
         run_condition='recording'
+    )
+
+    # MQTT
+    mqtt_publisher = mqttClient.MqttPublisher()
+    V.add(
+        mqtt_publisher,
+        inputs=['user/throttle'],
+        outputs=['user/throttle'],
+        threaded=True
     )
 
     V.start(
