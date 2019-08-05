@@ -49,6 +49,8 @@ Setup ansible
 pip install ansible==2.7.8
 ```
 
+Create a file named `ansible-vault` (git-ignored) containing the password to decrypt ansible-vault values.
+
 ### Check setup
 ```
 ansible-playbook --check --ask-pass -i inventories/cars.yml main.yml
@@ -143,3 +145,11 @@ Changing 40:1B:5F:77:AC:E3 trust succeeded
 ```
 
 Pairing needs to be done only once and is valid even after reboot.
+
+## Encrypted values in Ansible
+
+To encrypt a value:
+```
+ansible-vault encrypt_string 'rabbitmq_username' --name '...'
+ansible-vault encrypt_string 'rabbitmq_password' --name '...'
+```
