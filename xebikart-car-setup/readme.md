@@ -32,13 +32,19 @@ network={
 }
 ```
 
+Finally you can unmount SD card from your computer
+```
+diskutil unmountDisk /dev/diskX
+```
+
 ## Expand filesystem
 
+Connect to pi via ssh. 
 ```
-sudo raspi-config
+ssh pi@192.168.1.{101,102}
+$ sudo raspi-config
 ```
-
-Then go to `Advanced Options` > `Expand Filesystem`
+Then go to `Advanced Options` > `Expand Filesystem > Finish` and reboot.
 
 ## Setup App (from Desktop)
 
@@ -49,7 +55,7 @@ Setup ansible
 pip install ansible==2.7.8
 ```
 
-Create a file named `ansible-vault` (git-ignored) containing the password to decrypt ansible-vault values.
+Create a file named `ansible-vault` (git-ignored) whose content is the password to decrypt ansible-vault values.
 
 ### Check setup
 ```
