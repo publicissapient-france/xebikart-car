@@ -24,6 +24,10 @@
     regexp: '^{{ item.key }} = '
     line: '{{ item.key }} = {{ item.value }}'
   with_items:
+    - key:  "CAR_ID"
+      value: "{{ id }}"
+    - key:  "CAR_NAME"
+      value: "\"{{ name }}\""
     - key:  "STEERING_LEFT_PWM"
       value: "{{ steering_left_pwm }}"
     - key:  "STEERING_RIGHT_PWM"
