@@ -21,6 +21,7 @@ from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
+from lidar import RPLidar, BreezySLAM
 import mqttClient
 
 from driver import Driver
@@ -86,7 +87,10 @@ def drive(cfg, model_path=None):
             'user/angle',
             'user/throttle',
             'pilot/angle',
-            'pilot/throttle'
+            'pilot/throttle',
+            'car/x',
+            'car/y',
+            'car/angle'
         ],
         outputs=[
             'angle',
@@ -117,6 +121,30 @@ def drive(cfg, model_path=None):
         throttle,
         inputs=[
             'throttle'
+        ]
+    )
+
+    lidar = RPLidar()
+    V.add(
+        lidar,
+        outputs=[
+            'lidar/distances',
+            'lidar/angles'
+        ],
+        threaded=True
+    )
+
+    breezy_slam = BreezySLAM()
+    V.add(
+        breezy_slam,
+        inputs=[
+            'lidar/distances',
+            'lidar/angles'
+        ],
+        outputs=[
+            'car/x',
+            'car/y',
+            'car/angle',
         ]
     )
 
