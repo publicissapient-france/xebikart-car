@@ -8,7 +8,8 @@ class Driver:
             mode,
             user_angle, user_throttle,  # from controller
             pilot_angle, pilot_throttle,  # from ML model
-            x, y, angle  # from lidar
+            x, y, angle,  # from lidar
+            dx, dy, dz, tx, ty, tz  # from imu
     ):
         if mode == 'user':
             return user_angle, user_throttle, True
