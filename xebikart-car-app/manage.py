@@ -53,9 +53,6 @@ def drive(cfg, model_path=None):
     )
     V.add(
         controller,
-        inputs=[
-            'cam/image_array'
-        ],
         outputs=[
             'user/angle',
             'user/throttle',
