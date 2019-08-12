@@ -7,6 +7,8 @@ MODELS_PATH = os.path.join(CAR_PATH, 'models')
 TUB_PATH = os.path.join(CAR_PATH, 'tub')  # if using a single tub
 
 # VEHICLE
+CAR_ID = 99
+CAR_NAME = "car99"
 DRIVE_LOOP_HZ = 20
 MAX_LOOPS = 100000
 

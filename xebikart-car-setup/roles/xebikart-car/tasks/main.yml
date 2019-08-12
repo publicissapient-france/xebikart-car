@@ -10,4 +10,15 @@
 
 - name: "install python dependencies"
   pip:
-    name: "mpi4py"
+    name:
+      - mpi4py
+      - tensorflow==1.14.0
+      - stable-baselines==2.7.0
+
+- name: "add .bash_aliases file"
+  copy:
+    content: "alias ll='ls -l'"
+    dest: "/home/pi/.bash_aliases"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0644"
