@@ -21,6 +21,7 @@ from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
 from lidar import RPLidar, BreezySLAM
+from imu import Mpu6050
 import mqttClient
 
 from driver import Driver
@@ -89,7 +90,13 @@ def drive(cfg, model_path=None):
             'pilot/throttle',
             'car/x',
             'car/y',
-            'car/angle'
+            'car/angle',
+            'car/dx',
+            'car/dy',
+            'car/dz',
+            'car/tx',
+            'car/ty',
+            'car/tz'
         ],
         outputs=[
             'angle',
@@ -121,6 +128,20 @@ def drive(cfg, model_path=None):
         inputs=[
             'throttle'
         ]
+    )
+
+    imu = Mpu6050()
+    vehicle.add(
+        imu,
+        outputs=[
+            'car/dx',
+            'car/dy',
+            'car/dz',
+            'car/tx',
+            'car/ty',
+            'car/tz'
+        ],
+        threaded=True
     )
 
     lidar = RPLidar()
