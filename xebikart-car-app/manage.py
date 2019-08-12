@@ -20,11 +20,10 @@ from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
+from driver import Driver
 from lidar import RPLidar, BreezySLAM
 from imu import Mpu6050
 from mqtt import MQTTClient
-
-from driver import Driver
 
 
 def drive(cfg, model_path=None):
@@ -90,6 +89,7 @@ def drive(cfg, model_path=None):
             'pilot/throttle',
             'car/x',
             'car/y',
+            'car/z',
             'car/angle',
             'car/dx',
             'car/dy',
@@ -164,6 +164,7 @@ def drive(cfg, model_path=None):
         outputs=[
             'car/x',
             'car/y',
+            'car/z',
             'car/angle',
         ]
     )

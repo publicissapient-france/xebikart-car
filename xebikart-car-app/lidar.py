@@ -68,7 +68,7 @@ class BreezySLAM(object):
     def run(self, distances, angles):
         self.slam.update(distances, scan_angles_degrees=angles)
         x, y, angle = self.slam.getpos()
-        return x, y, (angle % 360)
+        return round(x, 1), round(y, 1), 0.0, round((angle % 360), 1)
 
     def shutdown(self):
         pass
