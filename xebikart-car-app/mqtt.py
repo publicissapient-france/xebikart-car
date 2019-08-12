@@ -5,19 +5,6 @@ import paho.mqtt.client as mqtt
 import config
 
 
-def on_connect(mqttc, obj, flags, rc):
-    print("rc: " + str(rc))
-
-
-def on_message(mqttc, obj, msg):
-    print(msg.topic + " " + str(msg.payload))
-
-
-def on_publish(mqttc, obj, result):
-    print("mid: " + str(result))
-    pass
-
-
 class MQTTClient:
 
     def __init__(self, publish_delay=1):
@@ -26,31 +13,43 @@ class MQTTClient:
         self.json_encoder = json.JSONEncoder()
 
         self.client = mqtt.Client()
-        self.client.on_connect = on_connect
-        self.client.on_message = on_message
-        self.client.on_publish = on_publish
-
-        username = config.RABBITMQ_USERNAME
-        password = config.RABBITMQ_PASSWORD
-
-        host = config.RABBITMQ_HOST
-        port = config.RABBITMQ_PORT
-
-        self.topic = config.RABBITMQ_TOPIC
-
-        self.client.username_pw_set(username=username, password=password)
-        self.client.connect(host, port, 60)
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+        self.client.on_publish = self.on_publish
+        self.client.username_pw_set(username=config.RABBITMQ_USERNAME, password=config.RABBITMQ_PASSWORD)
+        self.client.connect(config.RABBITMQ_HOST, config.RABBITMQ_PORT, 60)
+        self.client.loop_start()
+        self.client.subscribe(config.RABBITMQ_TOPIC + "/cars/" + str(config.CAR_ID))
 
         self.running = True
         self.output_payload = None
+        self.input_payload = None
 
         print("MQTT client initialized")
+
+    def on_connect(self, mqttc, obj, flags, rc):
+        print("Connected: " + str(rc))
+
+    def on_message(self, mqttc, obj, msg):
+        try:
+            text_paylod = msg.payload.decode("UTF-8")
+            dict_payload = json.loads(text_payload)
+            if 'mode' in dict_payload and 'car' in dict_payload and dict_payload['car'] == config.CAR_ID:
+                self.input_payload['mode'] = dict_payload['mode']
+        except Exception as e:
+            print("Error when receiving message", e)
+
+    def on_publish(self, mqttc, obj, result):
+        print("Published: " + str(result))
 
     def update(self):
         while self.running:
             if self.output_payload is not None:
-                self.client.publish(self.topic, json.dumps(self.output_payload))
-                time.sleep(self.publish_delay)
+                try:
+                    self.client.publish(config.RABBITMQ_TOPIC, json.dumps(self.output_payload))
+                    time.sleep(self.publish_delay)
+                except Exception as e:
+                    print("Error when publishing message", e)
 
     def run_threaded(
             self,
@@ -83,9 +82,12 @@ class MQTTClient:
                 'z': tz
             }
         }
-        return 0
+        if self.input_payload is not None:
+            return self.input_payload['mode']
+        else:
+            return None
 
     def shutdown(self):
         self.running = False
-        self.client.disconnect()
         self.client.loop_stop()
+        self.client.disconnect()

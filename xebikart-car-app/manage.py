@@ -197,7 +197,7 @@ def drive(cfg, model_path=None):
             'car/tz'
         ],
         outputs=[
-            'user/throttle'
+            'remote/mode'
         ],
         threaded=True
     )
