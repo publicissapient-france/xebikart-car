@@ -22,7 +22,7 @@ from donkeypart_ps3_controller import PS3JoystickController
 
 from lidar import RPLidar, BreezySLAM
 from imu import Mpu6050
-import mqttClient
+from mqtt import MQTTClient
 
 from driver import Driver
 
@@ -177,9 +177,9 @@ def drive(cfg, model_path=None):
         run_condition='recording'
     )
 
-    mqtt_publisher = mqttClient.MqttPublisher()
+    mqtt_client = MQTTClient()
     vehicle.add(
-        mqtt_publisher,
+        mqtt_client,
         inputs=['user/throttle'],
         outputs=['user/throttle'],
         threaded=True

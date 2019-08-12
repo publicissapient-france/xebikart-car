@@ -17,7 +17,7 @@ def on_publish(mqttc, obj, result):
     pass
 
 
-class MqttPublisher:
+class MQTTClient:
 
     def __init__(self, publish_delay=1):
         self.publish_delay = publish_delay
