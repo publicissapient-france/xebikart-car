@@ -181,8 +181,24 @@ def drive(cfg, model_path=None):
     mqtt_client = MQTTClient()
     vehicle.add(
         mqtt_client,
-        inputs=['user/throttle'],
-        outputs=['user/throttle'],
+        inputs=[
+            'user/mode',
+            'user/angle',
+            'user/throttle',
+            'car/x',
+            'car/y',
+            'car/z',
+            'car/angle',
+            'car/dx',
+            'car/dy',
+            'car/dz',
+            'car/tx',
+            'car/ty',
+            'car/tz'
+        ],
+        outputs=[
+            'user/throttle'
+        ],
         threaded=True
     )
 
