@@ -10,6 +10,7 @@ Options:
 """
 
 import os
+import logging
 from docopt import docopt
 
 import donkeycar as dk
@@ -211,4 +212,5 @@ def drive(cfg, model_path=None):
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
+    logging.basicConfig(level=cfg.LOG_LEVEL, format=cfg.LOG_FORMAT, handlers=[logging.StreamHandler()])
     drive(cfg, model_path=args['--model'])

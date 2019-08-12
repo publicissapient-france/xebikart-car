@@ -1,6 +1,7 @@
 import json
 import time
 import paho.mqtt.client as mqtt
+import logging
 
 import config
 
@@ -25,22 +26,23 @@ class MQTTClient:
         self.output_payload = None
         self.input_payload = None
 
-        print("MQTT client initialized")
+        logging.debug("MQTT client initialized")
 
     def on_connect(self, mqttc, obj, flags, rc):
-        print("Connected: " + str(rc))
+        logging.debug("Connected: " + str(rc))
 
     def on_message(self, mqttc, obj, msg):
+        logging.debug("Message received: " + str(msg.payload))
         try:
             text_paylod = msg.payload.decode("UTF-8")
             dict_payload = json.loads(text_payload)
             if 'mode' in dict_payload and 'car' in dict_payload and dict_payload['car'] == config.CAR_ID:
                 self.input_payload['mode'] = dict_payload['mode']
         except Exception as e:
-            print("Error when receiving message", e)
+            logging.error("Error when processing message", e)
 
     def on_publish(self, mqttc, obj, result):
-        print("Published: " + str(result))
+        logging.debug("Message published: " + str(result))
 
     def update(self):
         while self.running:
@@ -49,7 +51,7 @@ class MQTTClient:
                     self.client.publish(config.RABBITMQ_TOPIC, json.dumps(self.output_payload))
                     time.sleep(self.publish_delay)
                 except Exception as e:
-                    print("Error when publishing message", e)
+                    logging.error("Error when publishing message", e)
 
     def run_threaded(
             self,

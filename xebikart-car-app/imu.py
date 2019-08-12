@@ -1,5 +1,5 @@
 import time
-
+import logging
 
 # This sample was extracted and adapted from donkeycar parts samples. Original version can be found here:
 # https://github.com/autorope/donkeycar/blob/dev/donkeycar/parts/imu.py
@@ -25,7 +25,7 @@ class Mpu6050:
         try:
             self.accel, self.gyro, self.temp = self.sensor.get_all_data()
         except:
-            print('failed to read imu!!')
+            logging.error('failed to read imu!!')
 
     def run_threaded(self):
         return (
