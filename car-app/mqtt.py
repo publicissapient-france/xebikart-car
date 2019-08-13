@@ -11,8 +11,6 @@ class MQTTClient:
     def __init__(self, publish_delay=1):
         self.publish_delay = publish_delay
 
-        self.json_encoder = json.JSONEncoder()
-
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
