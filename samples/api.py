@@ -9,7 +9,7 @@ from paho.mqtt.client import Client
 import config
 
 
-class AsynchronousSubscriber():
+class Subscriber():
 
     def __init__(self):
         self.messages = []
@@ -36,7 +36,7 @@ class AsynchronousSubscriber():
 if __name__ == "__main__":
     logging.basicConfig(format=config.LOG_FORMAT, level=config.LOG_LEVEL, handlers=[logging.StreamHandler()])
 
-    subscriber = AsynchronousSubscriber()
+    subscriber = Subscriber()
     app = Flask(__name__)
 
 
