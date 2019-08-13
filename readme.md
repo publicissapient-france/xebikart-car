@@ -2,7 +2,7 @@
 
 ## Car setup
 
-See instructions here: [car setup](./xebikart-car-setup/readme.md)
+See instructions here: [car setup](car-setup/readme.md)
 
 ## Usage (from Raspberry Pi)
 
