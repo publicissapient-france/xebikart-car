@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-TUBES_DIRECTORY=${1:-$(pwd)/../xebikart-ml-tubes}
+TUBES_DIRECTORY=${1:-$(pwd)/../../xebikart-ml-tubes}
 
 if [[ ! -d "${TUBES_DIRECTORY}" ]]; then
   echo "${TUBES_DIRECTORY} doesn't exists."
