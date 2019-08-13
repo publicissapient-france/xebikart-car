@@ -15,8 +15,6 @@
     group: "{{ group }}"
     owner: "{{ user }}"
     mode: "0700"
-  notify:
-    - "restart service"
 
 - name: "apply configuration values"
   lineinfile:
@@ -42,24 +40,8 @@
       value: "\"{{ rabbitmq_password }}\""
     - key: "RABBITMQ_HOST"
       value: "\"{{ rabbitmq_host }}\""
-  notify:
-    - "restart service"
 
 - name: "install app dependencies"
   pip:
     requirements: "{{ user_directory }}/{{ app_name }}/requirements.txt"
     virtualenv: "{{ user_directory }}/env"
-
-- name: "copy service file"
-  template:
-    src: "{{ app_name }}.service"
-    dest: "/etc/systemd/system/{{ app_name }}.service"
-    mode: "0644"
-  notify:
-    - "restart service"
-
-- name: "ensure service is started and enabled"
-  systemd:
-    name: "{{ app_name }}"
-    state: "started"
-    enabled: "yes"
