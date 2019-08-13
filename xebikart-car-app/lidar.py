@@ -1,7 +1,7 @@
 import time
 import math
 import serial
-
+import logging
 
 # These samples were extracted and adapted from donkeycar parts samples. Original version can be found here:
 # https://github.com/autorope/donkeycar/blob/dev/donkeycar/parts/lidar.py
@@ -30,7 +30,7 @@ class RPLidar(object):
                     self.distances = [item[2] for item in scan]
                     self.angles = [item[1] for item in scan]
             except serial.serialutil.SerialException:
-                print('serial.serialutil.SerialException from Lidar. common when shutting down.')
+                logging.error('serial.serialutil.SerialException from Lidar. common when shutting down.')
 
     def run_threaded(self):
         return self.distances, self.angles
@@ -68,7 +68,7 @@ class BreezySLAM(object):
     def run(self, distances, angles):
         self.slam.update(distances, scan_angles_degrees=angles)
         x, y, angle = self.slam.getpos()
-        return x, y, (angle % 360)
+        return round(x, 1), round(y, 1), 0.0, round((angle % 360), 1)
 
     def shutdown(self):
         pass

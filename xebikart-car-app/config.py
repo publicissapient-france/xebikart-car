@@ -1,4 +1,9 @@
 import os
+import logging
+
+# LOGGING
+LOG_LEVEL = logging.DEBUG
+LOG_FORMAT = '%(asctime)s %(levelname)s %(message)s'
 
 # PATHS
 CAR_PATH = PACKAGE_PATH = os.path.dirname(os.path.realpath(__file__))

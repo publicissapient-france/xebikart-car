@@ -10,6 +10,7 @@ Options:
 """
 
 import os
+import logging
 from docopt import docopt
 
 import donkeycar as dk
@@ -20,11 +21,10 @@ from donkeycar.parts.datastore import TubGroup, TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
+from driver import Driver
 from lidar import RPLidar, BreezySLAM
 from imu import Mpu6050
-import mqttClient
-
-from driver import Driver
+from mqtt import MQTTClient
 
 
 def drive(cfg, model_path=None):
@@ -90,6 +90,7 @@ def drive(cfg, model_path=None):
             'pilot/throttle',
             'car/x',
             'car/y',
+            'car/z',
             'car/angle',
             'car/dx',
             'car/dy',
@@ -164,6 +165,7 @@ def drive(cfg, model_path=None):
         outputs=[
             'car/x',
             'car/y',
+            'car/z',
             'car/angle',
         ]
     )
@@ -177,11 +179,27 @@ def drive(cfg, model_path=None):
         run_condition='recording'
     )
 
-    mqtt_publisher = mqttClient.MqttPublisher()
+    mqtt_client = MQTTClient()
     vehicle.add(
-        mqtt_publisher,
-        inputs=['user/throttle'],
-        outputs=['user/throttle'],
+        mqtt_client,
+        inputs=[
+            'user/mode',
+            'user/angle',
+            'user/throttle',
+            'car/x',
+            'car/y',
+            'car/z',
+            'car/angle',
+            'car/dx',
+            'car/dy',
+            'car/dz',
+            'car/tx',
+            'car/ty',
+            'car/tz'
+        ],
+        outputs=[
+            'remote/mode'
+        ],
         threaded=True
     )
 
@@ -194,4 +212,5 @@ def drive(cfg, model_path=None):
 if __name__ == '__main__':
     args = docopt(__doc__)
     cfg = dk.load_config()
+    logging.basicConfig(level=cfg.LOG_LEVEL, format=cfg.LOG_FORMAT, handlers=[logging.StreamHandler()])
     drive(cfg, model_path=args['--model'])
