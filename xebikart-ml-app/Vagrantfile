@@ -1,0 +1,91 @@
+# encoding: utf-8
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+# Box / OS
+VAGRANT_BOX = 'ubuntu/bionic64' # JBR note: the latest "disco" is not compatible "as-is"
+
+# Memorable name for your
+VM_NAME = 'xebikart-car-app'
+
+# VM User — 'vagrant' by default
+VM_USER = 'vagrant'
+
+# Username on your Mac
+MAC_USER = '<PUT_YOUR_USERNAME_HERE>'
+
+# Host folder to sync
+HOST_PATH = '/Users/' + MAC_USER + '/' + VM_NAME
+
+# Where to sync to on Guest — 'vagrant' is the default user name
+GUEST_PATH = '/home/' + VM_USER + '/' + VM_NAME
+
+# # VM Port — uncomment this to use NAT instead of DHCP
+# VM_PORT = 8080
+Vagrant.configure(2) do |config|
+  # Vagrant box from Hashicorp
+  config.vm.box = VAGRANT_BOX
+  
+  # Actual machine name
+  config.vm.hostname = VM_NAME
+
+  # Set VM name in Virtualbox
+  config.vm.provider "virtualbox" do |v|
+    v.name = VM_NAME
+    v.memory = 4096
+  end
+  #DHCP — comment this out if planning on using NAT instead
+  config.vm.network "private_network", type: "dhcp"
+
+  # # Port forwarding — uncomment this to use NAT instead of DHCP
+  # config.vm.network "forwarded_port", guest: 80, host: VM_PORT
+  # Sync folder
+  config.vm.synced_folder HOST_PATH, GUEST_PATH
+
+  # Disable default Vagrant folder, use a unique path per project
+  config.vm.synced_folder '.', '/home/'+VM_USER+'', disabled: true
+
+  # Install Git, Node.js 6.x.x, Latest npm
+  config.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    export DEBIAN_FRONTEND=noninteractive
+    sudo apt-get install -y language-pack-fr
+
+    apt-get install -y git
+    curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+    apt-get install -y nodejs
+    apt-get install -y build-essential
+    npm install -g npm
+
+    sudo apt-get install -y software-properties-common
+    sudo apt-add-repository universe
+    apt-get update
+    apt-get upgrade -y
+    apt-get autoremove -y
+
+    # ---- Donkey Car
+    # -- ensure python3.6 (3.7 has install problems with donkey car) and necessary packages
+    #sudo apt-get install python3.6 # ubuntu/bionic64 comes by default with 3.6, ubuntu/disco64 comes by default with 3.7
+    sudo apt-get install -y python3-dev python3-pip python3-setuptools
+    pip3 install --upgrade setuptools
+
+    # -- standard Donkey installation as from http://docs.donkeycar.com/guide/install_software/#install-donkeycar-on-linux
+    # JBR note: no need for virtual env on vagrant-based VM, configure main python directly 
+    #sudo apt-get install -y python-virtualenv
+    sudo apt-get install -y build-essential python3-dev gfortran libhdf5-dev
+    #virtualenv env -p python3
+    #source env/bin/activate
+
+    # JBR note: the 1.8.0 comes with donkey, the newest version 2.0.0 or even the 1.13.1 is not compatible with the code 'as-is', probably needs small script adjustment
+    pip3 install --upgrade tensorflow==1.8.0 
+
+    # -- addition for our customized environment, cf. 
+    # JBR note : default install was replaced by pip with exact version to match the Xebia's car app setup procedure
+    # for Xebia car install details, cf. https://github.com/xebia-france/xebikart-car/blob/master/xebikart-car-app/requirements.txt
+    #git clone https://github.com/autorope/donkeycar
+    #pip3 install -e ./donkey-car
+    pip3 install git+https://github.com/autorope/donkeycar.git@2.5.8
+   
+    pip3 install git+https://github.com/autorope/donkeypart_ps3_controller.git
+    pip3 install paho-mqtt==1.4.0
+  SHELL
+end
