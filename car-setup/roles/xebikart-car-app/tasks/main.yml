@@ -47,7 +47,7 @@
 
 - name: "install app dependencies"
   pip:
-    requirements: "{{ user_directory }}/{{ app_name }}/requirements-pi.txt"
+    requirements: "{{ user_directory }}/{{ app_name }}/requirements.txt"
     virtualenv: "{{ user_directory }}/env"
 
 - name: "copy service file"
