@@ -6,7 +6,6 @@ Usage:
 
 Options:
     -h --help        Show this screen.
-    --tub TUBPATHS   List of paths to tubs. Comma separated. Use quotes to use wildcards. ie "~/tubs/*"
 """
 
 import os
@@ -15,16 +14,20 @@ from docopt import docopt
 
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.datastore import TubGroup, TubWriter
+from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
-from driver import Driver
-from lidar import RPLidar, BreezySLAM
-from imu import Mpu6050
-from mqtt import MQTTClient
+from xebikart.parts.driver import Driver
+from xebikart.parts.lidar import RPLidar, BreezySLAM
+from xebikart.parts.imu import Mpu6050
+from xebikart.parts.mqtt import MQTTClient
+from xebikart.parts.keras import KerasAngleModel
+
+import tensorflow as tf
+
+tf.compat.v1.enable_eager_execution()
 
 
 def drive(cfg, model_path=None):
@@ -63,12 +66,12 @@ def drive(cfg, model_path=None):
         threaded=True
     )
 
-    keras_linear = KerasLinear()
+    keras_model = KerasAngleModel(fix_throttle=0.2)
     if model_path:
-        keras_linear.load(model_path)
+        keras_model.load(model_path)
 
     vehicle.add(
-        keras_linear,
+        keras_model,
         inputs=[
             'cam/image_array'
         ],
