@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlflow-tracking-server
+  namespace: mlflow
+  labels:
+    app: mlflow-tracking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlflow-tracking
+  template:
+    metadata:
+      labels:
+        app: mlflow-tracking
+    spec:
+      containers:
+      - name: mlflow-tracking
+        image: eu.gcr.io/keynote-xebicon-19/mlflow:1.1.0
+        args: [
+          "server",
+          "--backend-store-uri", "/mnt/local_storage",
+          "--default-artifact-root", "gs://xebikart-mlflow-artifacts/",
+          "--host", "0.0.0.0"]
+        ports:
+        - containerPort: 5000

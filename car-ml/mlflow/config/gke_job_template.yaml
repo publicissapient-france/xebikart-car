@@ -1,0 +1,51 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{will_be_replace}"
+  namespace: mlflow
+spec:
+  ttlSecondsAfterFinished: 100
+  backoffLimit: 0
+  template:
+    spec:
+      initContainers:
+      - name: download-tubes
+        image: 'google/cloud-sdk:alpine'
+        command: ["gsutil", "-m"]
+        args: ["cp", "gs://xebikart-tubes/archives/*.tar.gz", "xebikart-ml-tubes"]
+        workingDir: /workspace
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      - name: git-sync
+        image: 'k8s.gcr.io/git-sync:v9.3.76'
+        args: [
+          "-ssh",
+          "-one-time",
+          "-repo=git@github.com:xebia-france/xebikart-car-app.git",
+          "-root=/workspace",
+          "-dest=xebikart-car-app",
+          "-branch=master"]
+        volumeMounts:
+        - name: git-secret
+          mountPath: /etc/git-secret
+        - name: workspace
+          mountPath: /workspace
+      - name: copy-workspace
+        image: 'alpine:3.7'
+        args: ["cp", "-r", "/workspace/xebikart-car-app/car-ml/workspace/* /workspace/"]
+        workingDir: /workspace
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      containers:
+      - name: "{will_be_replace}"
+        image: "{will_be_replace}"
+        command: ["{will_be_replace}"]
+        volumeMounts:
+        - mountPath: /workspace/xebikart-ml-tubes
+          name: xebikart-tubes
+      restartPolicy: Never
+      volumes:
+      - name: workspace
+        emptyDir: {}

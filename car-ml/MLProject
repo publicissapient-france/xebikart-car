@@ -1,0 +1,12 @@
+name: xebikart
+
+docker_env:
+    image: xebikart_ml
+
+entry_points:
+    main:
+        parameters:
+            total_timesteps: {type: int, default: 10000}
+        command: "papermill /workspace/reinforcement_learning/soft_actor_critical.ipynb outputs_soft_actor_critical.ipynb"
+    vae:
+        command: "papermill /workspace/auto_encoder/variational_auto_encoder.ipynb outputs_variational_auto_encoder.ipynb"
