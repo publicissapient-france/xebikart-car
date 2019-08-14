@@ -24,6 +24,8 @@ from xebikart.parts.lidar import RPLidar, BreezySLAM
 from xebikart.parts.imu import Mpu6050
 from xebikart.parts.mqtt import MQTTClient
 from xebikart.parts.keras import KerasAngleModel
+from xebikart.parts.image import ImageTransformation
+import xebikart.images.transformer as image_transformer
 
 import tensorflow as tf
 
@@ -66,14 +68,27 @@ def drive(cfg, model_path=None):
         threaded=True
     )
 
-    keras_model = KerasAngleModel(fix_throttle=0.2)
-    if model_path:
-        keras_model.load(model_path)
+    image_transformation = ImageTransformation([
+        image_transformer.normalize,
+        image_transformer.generate_crop_fn(0, 40, 160, 80),
+        image_transformer.edges
+    ])
+    vehicle.add(
+        image_transformation,
+        inputs=[
+            'cam/image_array'
+        ],
+        outputs=[
+            'transformed/image_array'
+        ]
+    )
 
+    keras_model = KerasAngleModel(fix_throttle=0.2)
+    keras_model.load(model_path)
     vehicle.add(
         keras_model,
         inputs=[
-            'cam/image_array'
+            'transformed/image_array'
         ],
         outputs=[
             'pilot/angle',

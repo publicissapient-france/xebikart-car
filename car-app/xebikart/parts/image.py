@@ -1,27 +1,14 @@
 import tensorflow as tf
 
-import xebikart.images.transformer as image_transformer
 
-
-class Normalize:
-    def run(self, img_arr):
-        return image_transformer.normalize(img_arr)
-
-
-class Crop:
-    def __init__(self, left_margin=0, height_margin=40, width=160, height=80):
-        self.crop_fn = image_transformer.generate_crop_fn(left_margin=left_margin,
-                                                          height_margin=height_margin,
-                                                          width=width,
-                                                          height=height)
+class ImageTransformation:
+    def __init__(self, transformations_fn):
+        self.transformations_fn = transformations_fn
 
     def run(self, img_arr):
-        return self.crop_fn(img_arr)
-
-
-class Edges:
-    def run(self, img_arr):
-        return image_transformer.edges(img_arr)
+        for transformation_fn in self.transformations_fn:
+            img_arr = transformation_fn(img_arr)
+        return img_arr
 
 
 class VAEEmbedding:
