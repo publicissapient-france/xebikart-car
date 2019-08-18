@@ -25,6 +25,7 @@ from driver import Driver
 from lidar import RPLidar, BreezySLAM
 from imu import Mpu6050
 from mqtt import MQTTClient
+from server import VideoServer
 
 
 def drive(cfg, model_path=None):
@@ -36,6 +37,15 @@ def drive(cfg, model_path=None):
         outputs=[
             'timestamp'
         ]
+    )
+
+    server = VideoServer()
+    vehicle.add(
+        server,
+        inputs=[
+            'cam/image_array'
+        ],
+        threaded=True
     )
 
     camera = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
