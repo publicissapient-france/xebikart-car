@@ -102,7 +102,9 @@ def drive(cfg, model_path=None):
         outputs=[
             'angle',
             'throttle',
-            'run_pilot'
+            'run_pilot',
+            'imu_enabled',
+            'lidar_enabled'
         ]
     )
 
@@ -142,7 +144,8 @@ def drive(cfg, model_path=None):
             'car/ty',
             'car/tz'
         ],
-        threaded=True
+        threaded=True,
+        run_condition='imu_enabled'
     )
 
     lidar = RPLidar()
@@ -152,7 +155,8 @@ def drive(cfg, model_path=None):
             'lidar/distances',
             'lidar/angles'
         ],
-        threaded=True
+        threaded=True,
+        run_condition='lidar_enabled'
     )
 
     breezy_slam = BreezySLAM()
@@ -166,8 +170,9 @@ def drive(cfg, model_path=None):
             'car/x',
             'car/y',
             'car/z',
-            'car/angle',
-        ]
+            'car/angle'
+        ],
+        run_condition='lidar_enabled'
     )
 
     inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
