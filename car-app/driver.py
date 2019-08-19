@@ -1,5 +1,7 @@
 import json
 
+import config
+
 
 class Driver:
 
@@ -12,6 +14,6 @@ class Driver:
             dx, dy, dz, tx, ty, tz  # from imu
     ):
         if mode == 'user':
-            return user_angle, user_throttle, True
+            return user_angle, user_throttle, True, config.IMU_ENABLED, config.LIDAR_ENABLED
         else:
-            return pilot_angle, pilot_throttle, False
+            return pilot_angle, pilot_throttle, False, config.IMU_ENABLED, config.LIDAR_ENABLED

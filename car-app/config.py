@@ -47,3 +47,9 @@ RABBITMQ_PASSWORD = "admin"
 RABBITMQ_HOST = "localhost"
 RABBITMQ_PORT = 1883
 RABBITMQ_TOPIC = "xebikart-events"
+
+# IMU
+IMU_ENABLED = True
+
+# LIDAR
+LIDAR_ENABLED = False
