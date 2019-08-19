@@ -18,10 +18,9 @@ class RPLidar(object):
     def __init__(self, port='/dev/ttyUSB0'):
         if config.LIDAR_ENABLED:
             from rplidar import RPLidar
-            self.lidar = RPLidar(self.port)
+            self.lidar = RPLidar(port)
             self.lidar.clear_input()
             time.sleep(1)
-        self.port = port
         self.distances = []
         self.angles = []
         self.on = True
