@@ -4,6 +4,7 @@
   apt:
     name:
       - python-setuptools
+      - python3-smbus
       - libopenmpi-dev
     update_cache: "yes"
     state: "present"
@@ -11,7 +12,7 @@
 - name: "install python dependencies"
   pip:
     name:
-      - mpi4py
+      - mpi4py==3.0.2
       - tensorflow==1.14.0
       - stable-baselines==2.7.0
 
