@@ -26,7 +26,7 @@ class MemorySoftActorCriticalModel(SoftActorCriticalModel):
 
     def run(self, img_arr):
         # append history
-        img_history = self._add_history(img_arr)
+        img_history = np.concatenate((img_arr, self.command_history), axis=-1)
         action, _ = self.sac.predict(img_history)
 
         # Update command history
@@ -37,7 +37,4 @@ class MemorySoftActorCriticalModel(SoftActorCriticalModel):
         steering = action[0]
         throttle = action[1]
         return steering, throttle
-
-    def _add_history(self, img_encoded):
-        return np.concatenate((img_encoded, self.command_history), axis=-1)
 
