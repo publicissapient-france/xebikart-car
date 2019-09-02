@@ -18,6 +18,10 @@ diskutil unmountDisk /dev/diskX
 sudo dd bs=1m if=donkey_2.5.0_pi3.img of=/dev/rdiskX conv=sync
 ```
 
+## Reserve a static IP address for the car
+
+Check [this page](https://github.com/xebia-france/xebikart-car/wiki/Configure-static-IP-address-for-Donkeycar) to see how to set up static wifi.
+
 ## Setup Wifi
 
 Create `/wpa_supplicant.conf` file inside SD card boot volume with content like following:
