@@ -35,7 +35,22 @@ def add_publish_to_mqtt(vehicle, steering_input, throttle_input):
     )
 
 
-def add_sensors(vehicle):
+def add_sensors(vehicle, cfg):
+    is_imu_enabled_lb = Lambda(lambda: cfg.IMU_ENABLED)
+    vehicle.add(
+        is_imu_enabled_lb,
+        outputs=[
+            'imu_enabled'
+        ]
+    )
+    is_lidar_enabled_lb = Lambda(lambda: cfg.LIDAR_ENABLED)
+    vehicle.add(
+        is_lidar_enabled_lb,
+        outputs=[
+            'lidar_enabled'
+        ]
+    )
+
     imu = Mpu6050()
     vehicle.add(
         imu,
@@ -47,7 +62,8 @@ def add_sensors(vehicle):
             'car/ty',
             'car/tz'
         ],
-        threaded=True
+        threaded=True,
+        run_condition='imu_enabled'
     )
     lidar = RPLidar()
     vehicle.add(
@@ -56,7 +72,8 @@ def add_sensors(vehicle):
             'lidar/distances',
             'lidar/angles'
         ],
-        threaded=True
+        threaded=True,
+        run_condition='lidar_enabled'
     )
     breezy_slam = BreezySLAM()
     vehicle.add(
@@ -70,7 +87,8 @@ def add_sensors(vehicle):
             'car/y',
             'car/z',
             'car/angle',
-        ]
+        ],
+        run_condition='lidar_enabled'
     )
 
 
@@ -124,7 +142,7 @@ def add_pilot(vehicle, mode_input,
     )
 
 
-def add_throttle(vehicle, throttle_input, cfg):
+def add_throttle(vehicle, cfg, throttle_input):
     throttle = PWMThrottle(
         controller=PCA9685(cfg.THROTTLE_CHANNEL),
         max_pulse=cfg.THROTTLE_FORWARD_PWM,
@@ -139,7 +157,7 @@ def add_throttle(vehicle, throttle_input, cfg):
     )
 
 
-def add_steering(vehicle, steering_input, cfg):
+def add_steering(vehicle, cfg, steering_input):
     steering = PWMSteering(
         controller=PCA9685(cfg.STEERING_CHANNEL),
         left_pulse=cfg.STEERING_LEFT_PWM,

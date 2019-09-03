@@ -48,13 +48,12 @@ def drive(cfg, args):
               'user/steering', 'user/throttle',
               'ai/steering', 'ai/throttle',
               'pilot/steering', 'pilot/throttle')
-
-    add_steering(vehicle, 'pilot/angle', cfg)
-    add_throttle(vehicle, 'pilot/throttle', cfg)
+    add_steering(vehicle, cfg, 'pilot/angle')
+    add_throttle(vehicle, cfg, 'pilot/throttle')
 
     # Add sensors
     add_timestamp(vehicle)
-    add_sensors(vehicle)
+    add_sensors(vehicle, cfg)
 
     # Publish to mqtt
     add_publish_to_mqtt(vehicle, 'pilot/angle', 'pilot/throttle')
