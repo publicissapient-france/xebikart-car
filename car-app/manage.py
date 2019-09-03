@@ -17,14 +17,16 @@ from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
 from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
+from donkeycar.parts.keras import KerasLinear
 from donkeypart_ps3_controller import PS3JoystickController
 
-from xebikart.parts.driver import Driver
-from xebikart.parts.lidar import RPLidar, BreezySLAM
-from xebikart.parts.imu import Mpu6050
-from xebikart.parts.mqtt import MQTTClient
-from xebikart.parts.keras import KerasAngleModel
-from xebikart.parts.image import ImageTransformation
+from xebikart_app.parts.driver import Driver
+from xebikart_app.parts.lidar import RPLidar, BreezySLAM
+from xebikart_app.parts.imu import Mpu6050
+from xebikart_app.parts.mqtt import MQTTClient
+from xebikart_app.parts.keras import KerasAngleModel
+from xebikart_app.parts.image import ImageTransformation
+
 import xebikart.images.transformer as image_transformer
 
 import tensorflow as tf
@@ -83,7 +85,7 @@ def drive(cfg, model_path=None):
         ]
     )
 
-    keras_model = KerasAngleModel(fix_throttle=0.2)
+    keras_model = KerasLinear()
     keras_model.load(model_path)
     vehicle.add(
         keras_model,
