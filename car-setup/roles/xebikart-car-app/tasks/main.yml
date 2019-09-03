@@ -16,6 +16,14 @@
     owner: "{{ user }}"
     mode: "0700"
 
+- name: "copy ml sources"
+  copy:
+    src: "{{ role_path }}/../../../car-ml" # ending slash only copies content inside directory, not directory itself
+    dest: "{{ user_directory }}"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+
 - name: "apply configuration values"
   lineinfile:
     path: "{{ user_directory }}/{{ app_name }}/config.py"
@@ -44,4 +52,10 @@
 - name: "install app dependencies"
   pip:
     requirements: "{{ user_directory }}/{{ app_name }}/requirements.txt"
+    virtualenv: "{{ user_directory }}/env"
+
+- name: "install ml package"
+  pip:
+    name: "file://{{ user_directory }}/car-ml"
+    extra_args: "-e"
     virtualenv: "{{ user_directory }}/env"
