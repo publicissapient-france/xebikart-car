@@ -1,15 +1,9 @@
-from donkeycar.parts.actuator import PWMThrottle, PCA9685, PWMSteering
-from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.clock import Timestamp
 from donkeycar.parts.transform import Lambda
-from donkeypart_ps3_controller import PS3JoystickController
-
-from xebikart_app.parts.imu import Mpu6050
-from xebikart_app.parts.lidar import RPLidar, BreezySLAM
-from xebikart_app.parts.mqtt import MQTTClient
 
 
 def add_publish_to_mqtt(vehicle, steering_input, throttle_input):
+    from xebikart_app.parts.mqtt import MQTTClient
+
     mqtt_client = MQTTClient()
     vehicle.add(
         mqtt_client,
@@ -36,6 +30,9 @@ def add_publish_to_mqtt(vehicle, steering_input, throttle_input):
 
 
 def add_sensors(vehicle, cfg):
+    from xebikart_app.parts.lidar import RPLidar, BreezySLAM
+    from xebikart_app.parts.imu import Mpu6050
+
     is_imu_enabled_lb = Lambda(lambda: cfg.IMU_ENABLED)
     vehicle.add(
         is_imu_enabled_lb,
@@ -93,6 +90,7 @@ def add_sensors(vehicle, cfg):
 
 
 def add_controller(vehicle, cfg, user_steering_output, user_throttle_output, user_mode_output, recording_output):
+    from donkeypart_ps3_controller import PS3JoystickController
     controller = PS3JoystickController(
         throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
         steering_scale=cfg.JOYSTICK_STEERING_SCALE,
@@ -142,7 +140,21 @@ def add_pilot(vehicle, mode_input,
     )
 
 
+def add_logger(vehicle, prefix, input):
+    def _log(i):
+        print(f"{prefix}: {i}")
+
+    log_lb = Lambda(_log)
+    vehicle.add(
+        log_lb,
+        inputs=[
+            input
+        ]
+    )
+
+
 def add_throttle(vehicle, cfg, throttle_input):
+    from donkeycar.parts.actuator import PWMThrottle, PCA9685
     throttle = PWMThrottle(
         controller=PCA9685(cfg.THROTTLE_CHANNEL),
         max_pulse=cfg.THROTTLE_FORWARD_PWM,
@@ -158,6 +170,7 @@ def add_throttle(vehicle, cfg, throttle_input):
 
 
 def add_steering(vehicle, cfg, steering_input):
+    from donkeycar.parts.actuator import PCA9685, PWMSteering
     steering = PWMSteering(
         controller=PCA9685(cfg.STEERING_CHANNEL),
         left_pulse=cfg.STEERING_LEFT_PWM,
@@ -172,6 +185,7 @@ def add_steering(vehicle, cfg, steering_input):
 
 
 def add_timestamp(vehicle):
+    from donkeycar.parts.clock import Timestamp
     clock = Timestamp()
     vehicle.add(
         clock,
@@ -182,6 +196,8 @@ def add_timestamp(vehicle):
 
 
 def add_pi_camera(vehicle, cfg, camera_output):
+    from donkeycar.parts.camera import PiCamera
+
     camera = PiCamera(resolution=cfg.CAMERA_RESOLUTION)
     vehicle.add(
         camera,
