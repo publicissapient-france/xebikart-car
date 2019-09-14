@@ -215,7 +215,7 @@ class HistoryBasedWrapper(Wrapper):
 
             if abs(steering_diff) > self.max_steering_diff:
                 error = abs(steering_diff) - self.max_steering_diff
-                jerk_penalty += self.jerk_penalty_weight * (error ** 2)
+                jerk_penalty += (1 + self.jerk_penalty_weight * error) ** 2
             else:
                 jerk_penalty += 0
 
