@@ -1,5 +1,7 @@
 FROM python:3.6
 
+ARG SIMULATOR_PATH=simulators/DonkeySimLinux.zip
+
 # Add tini
 ENV TINI_VERSION v0.6.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
@@ -15,10 +17,9 @@ RUN apt update && apt install -y xvfb mesa-utils libgl1-mesa-glx libopenmpi-dev 
 ENV MESA_GL_VERSION_OVERRIDE 3.3
 
 # Donkey Sim
-RUN mkdir -p /sim && cd /sim && \
-  curl -L https://github.com/tawnkramer/donkey_gym/releases/download/v18.9/DonkeySimLinux.zip -o donkey_sim.zip && \
-  unzip donkey_sim.zip && \
-  rm -f donkey_sim.zip
+RUN mkdir -p /sim
+COPY $SIMULATOR_PATH /sim/donkey_sim.zip
+RUN cd /sim && unzip donkey_sim.zip && rm -f donkey_sim.zip
 ENV DONKEY_SIM_HOME /sim/
 ENV DONKEY_SIM_HEADLESS 1
 
