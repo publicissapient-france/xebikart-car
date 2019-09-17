@@ -15,8 +15,8 @@ from docopt import docopt
 
 import donkeycar as dk
 
-from xebikart_app import add_publish_to_mqtt, add_sensors, add_controller, \
-    add_throttle, add_steering, add_timestamp, add_pi_camera, add_pilot
+from xebikart_app import add_controller, add_logger, \
+    add_throttle, add_steering, add_pi_camera, add_pilot
 
 from xebikart_app.parts.keras import PilotModel
 from xebikart_app.parts.image import ImageTransformation
@@ -46,15 +46,11 @@ def drive(cfg, args):
               'user/steering', 'user/throttle',
               'ai/steering', 'ai/throttle',
               'pilot/steering', 'pilot/throttle')
-    add_steering(vehicle, cfg, 'pilot/angle')
+    add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
-    # Add sensors
-    add_timestamp(vehicle)
-    add_sensors(vehicle, cfg)
-
-    # Publish to mqtt
-    add_publish_to_mqtt(vehicle, 'pilot/angle', 'pilot/throttle')
+    add_logger(vehicle, 'pilot/steering', 'pilot/steering')
+    add_logger(vehicle, 'pilot/throttle', 'pilot/throttle')
 
     vehicle.start(
         rate_hz=cfg.DRIVE_LOOP_HZ,

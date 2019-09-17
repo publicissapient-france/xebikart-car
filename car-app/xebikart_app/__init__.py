@@ -142,7 +142,7 @@ def add_pilot(vehicle, mode_input,
 
 def add_logger(vehicle, prefix, input):
     def _log(i):
-        print(f"{prefix}: {i}")
+        print(prefix, ": ", i)
 
     log_lb = Lambda(_log)
     vehicle.add(
