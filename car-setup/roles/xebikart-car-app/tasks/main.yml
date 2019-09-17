@@ -17,12 +17,13 @@
     mode: "0700"
 
 - name: "copy ml sources"
-  copy:
+  synchronize:
     src: "{{ role_path }}/../../../car-ml" # ending slash only copies content inside directory, not directory itself
     dest: "{{ user_directory }}"
-    group: "{{ group }}"
-    owner: "{{ user }}"
-    mode: "0700"
+    group: 'no'
+    owner: 'no'
+    rsync_opts:
+      - "--exclude=.git --exclude=workspace"
 
 - name: "apply configuration values"
   lineinfile:
