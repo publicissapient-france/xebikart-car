@@ -18,6 +18,10 @@ diskutil unmountDisk /dev/diskX
 sudo dd bs=1m if=donkey_2.5.0_pi3.img of=/dev/rdiskX conv=sync
 ```
 
+## Reserve a static IP address for the car
+
+Check [this page](https://github.com/xebia-france/xebikart-car/wiki/Configure-static-IP-address-for-Donkeycar) to see how to set up static wifi.
+
 ## Setup Wifi
 
 Create `/wpa_supplicant.conf` file inside SD card boot volume with content like following:
@@ -84,6 +88,11 @@ Only app setup (car 2):
 ansible-playbook --ask-pass -i inventories/cars.yml -l car2 main-app.yml
 ```
 
+Only app setup (car 3):
+```
+ansible-playbook --ask-pass -i inventories/cars.yml -l car3 main-app.yml
+```
+
 ## Pairing a PS4 controller
 
 ### from PS4 Controller
@@ -124,6 +133,16 @@ trust 40:1B:5F:77:8E:13
 quit
 ```
 
+Car3
+```
+agent on
+default-agent
+scan on
+connect 90:89:5F:73:0E:11
+trust 90:89:5F:73:0E:11
+quit
+```
+
 Example output for the commands above:
 ```
 (env) pi@donkeypi:~ $ sudo bluetoothctl
@@ -156,6 +175,6 @@ Pairing needs to be done only once and is valid even after reboot.
 
 To encrypt a value:
 ```
-ansible-vault encrypt_string 'rabbitmq_username' --name '...'
-ansible-vault encrypt_string 'rabbitmq_password' --name '...'
+ansible-vault encrypt_string 'rabbitmq_username_value' --name 'rabbitmq_username'
+ansible-vault encrypt_string 'rabbitmq_password_value' --name 'rabbitmq_password'
 ```

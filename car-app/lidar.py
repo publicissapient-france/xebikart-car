@@ -3,6 +3,9 @@ import math
 import serial
 import logging
 
+import config
+
+
 # These samples were extracted and adapted from donkeycar parts samples. Original version can be found here:
 # https://github.com/autorope/donkeycar/blob/dev/donkeycar/parts/lidar.py
 # donkeycar setup does not automatically include theses parts, not sure why yet...
@@ -13,18 +16,18 @@ class RPLidar(object):
     '''
 
     def __init__(self, port='/dev/ttyUSB0'):
-        from rplidar import RPLidar
-        self.port = port
+        if config.LIDAR_ENABLED:
+            from rplidar import RPLidar
+            self.lidar = RPLidar(port)
+            self.lidar.clear_input()
+            time.sleep(1)
         self.distances = []
         self.angles = []
-        self.lidar = RPLidar(self.port)
-        self.lidar.clear_input()
-        time.sleep(1)
         self.on = True
 
     def update(self):
-        scans = self.lidar.iter_scans(1000)
-        while self.on:
+        while config.LIDAR_ENABLED and self.on:
+            scans = self.lidar.iter_scans(1000)
             try:
                 for scan in scans:
                     self.distances = [item[2] for item in scan]
@@ -49,21 +52,21 @@ class BreezySLAM(object):
     '''
 
     def __init__(self, map_size_pixels=500, map_size_meters=10, map_quality=5):
-        from breezyslam.algorithms import RMHC_SLAM
-        from breezyslam.sensors import Laser
-
-        laser_model = Laser(
-            scan_size=360,
-            scan_rate_hz=10.,
-            detection_angle_degrees=360,
-            distance_no_detection_mm=12000
-        )
-        self.slam = RMHC_SLAM(
-            laser_model,
-            map_size_pixels,
-            map_size_meters,
-            map_quality
-        )
+        if config.LIDAR_ENABLED:
+            from breezyslam.algorithms import RMHC_SLAM
+            from breezyslam.sensors import Laser
+            laser_model = Laser(
+                scan_size=360,
+                scan_rate_hz=10.,
+                detection_angle_degrees=360,
+                distance_no_detection_mm=12000
+            )
+            self.slam = RMHC_SLAM(
+                laser_model,
+                map_size_pixels,
+                map_size_meters,
+                map_quality
+            )
 
     def run(self, distances, angles):
         self.slam.update(distances, scan_angles_degrees=angles)
