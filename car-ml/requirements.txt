@@ -1,13 +1,9 @@
 # Base
-tensorflow>=1.14.0
+#tensorflow>=1.14.0
 numpy==1.14.5
 requests==2.22.0
 cloudpickle
 donkeycar
 
-# Gym
-gym==0.12.1
-pillow==6.0.0
-
-# RL
-stable-baselines>=2.4.0
+# Reinforcement
+rl_coach

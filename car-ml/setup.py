@@ -7,16 +7,6 @@ setup(
     install_requires=[
         'numpy==1.14.5',
         'requests==2.22.0',
-        'tensorflow>=1.14.0',
         'donkeycar'
-    ],
-    extras_require={
-        "gym": [
-            'gym==0.12.1',
-            'pillow==6.0.0'
-        ],
-        'rl': [
-            'stable-baselines>=2.4.0'
-        ]
-    }
+    ]
 )

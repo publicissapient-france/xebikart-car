@@ -170,7 +170,8 @@ class HistoryBasedWrapper(Wrapper):
 
     def observation(self, observation):
         command_history_reshaped = np.reshape(self.command_history, (1, self.n_commands * self.n_command_history))
-        return np.concatenate((observation, command_history_reshaped), axis=-1)
+        command_history_reshaped = np.concatenate((observation, command_history_reshaped), axis=-1)
+        return np.squeeze(command_history_reshaped)
 
     def reward(self, reward):
         """
