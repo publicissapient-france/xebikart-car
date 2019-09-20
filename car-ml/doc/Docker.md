@@ -1,3 +1,9 @@
+# Download simulator
+
+Go to : https://github.com/xebia-france/xebikart-unity/releases/download/v0.1/DonkeySimLinux.zip
+
+And put in `car-ml/simulators/`
+
 # Build docker image
 
 	docker build -t xebikart_ml .
