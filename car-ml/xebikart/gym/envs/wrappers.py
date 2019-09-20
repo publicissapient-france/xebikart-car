@@ -72,35 +72,6 @@ class EdgingObservationWrapper(ObservationWrapper):
         return self.sess.run(self.tf_edging_image, {self.image_placeholder: observation})
 
 
-class VAEObservationWrapper(ObservationWrapper):
-    def __init__(self, env, vae):
-        """
-        Apply VAE (Variational Auto Encoder) on observation.
-        Based on old implementation of VAE (vae.model.ConvVAE)
-
-        :param env:
-        :param vae: vae.model.ConvVAE
-        """
-        super(VAEObservationWrapper, self).__init__(env)
-
-        self.vae = vae
-
-        original_shape = self.env.observation_space.shape
-        vae_input_shape = self.vae.input_shape[1:]
-
-        assert original_shape == vae_input_shape
-
-        self.observation_space = Box(low=np.finfo(np.float32).min,
-                                     high=np.finfo(np.float32).max,
-                                     shape=(self.vae.z_size, ),
-                                     dtype=np.float32)
-
-    def observation(self, observation):
-        observation = observation.astype(np.float32) / 255.
-        observation = observation[None]
-        return self.vae.encode(observation)
-
-
 class ConvVariationalAutoEncoderObservationWrapper(ObservationWrapper):
     def __init__(self, env, vae, normalize=False):
         """
