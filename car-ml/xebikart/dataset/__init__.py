@@ -16,12 +16,16 @@ def _get_archive(tubes_root_path, tube_name, tubes_extension, cache_dir):
 
 def get_tubes_df(tubes_root_path, tubes_name, tubes_extension="", cache_dir=None):
     tubes = []
-
+    i = 0
     # get files
     for tube_name in tubes_name:
         path = _get_archive(tubes_root_path, tube_name, tubes_extension, cache_dir)
         tub = Tub(str(path))
-        tubes.append(tub.get_df())
+        tub_df = tub.get_df()
+        tub_df["num_tube"] = i # track the different tubes
+        tubes.append(tub_df)
+        i += 1
+
     return pd.concat(tubes, sort=False)
 
 
