@@ -30,6 +30,20 @@ def data_augmentation(tf_image):
     return tf_image
 
 
+def resize(tf_image):
+    """
+    - normalize values of the tensor
+    - resize images to (1, 160, 160, 3) images
+
+    :param tf_image: Tensor of shape [X, X, 3]
+    :return: Tensor of shape [1, 160, 160, 3]
+    """
+    tf_image_normalized = normalize(tf_image)
+    tf_image_resized = tf.image.resize(tf_image_normalized, (160, 160), method=2)
+    tf_img = tf.reshape(tf_image_resized, (1, 160, 160, 3))
+
+    return tf_img
+
 def edges(tf_image):
     """
     - Convert rgb images to grayscale
