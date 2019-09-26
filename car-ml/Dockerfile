@@ -16,6 +16,9 @@ RUN apt update && apt install -y xvfb mesa-utils libgl1-mesa-glx libopenmpi-dev 
 # Override OpenGL Version (unity requires >= 3.2)
 ENV MESA_GL_VERSION_OVERRIDE 3.3
 
+# set default screen to 1 (to match xvfb display port)
+ENV DISPLAY=:1
+
 # Donkey Sim
 RUN mkdir -p /sim
 COPY $SIMULATOR_PATH /sim/donkey_sim.zip
