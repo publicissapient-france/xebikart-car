@@ -8,4 +8,4 @@ if [[ ! -d "${TUBES_DIRECTORY}" ]]; then
   exit 1
 fi
 
-docker run -d -v $(pwd)/workspace:/workspace -v ${TUBES_DIRECTORY}:/workspace/xebikart-ml-tubes -p 8888:8888 -p 5000:5000 xebikart_ml
+docker run -d -v $(pwd)/workspace:/workspace -v ${TUBES_DIRECTORY}:/workspace/xebikart-ml-tubes -p 8888:8888 -p 5000:5000 -p 5900:5900 xebikart_ml

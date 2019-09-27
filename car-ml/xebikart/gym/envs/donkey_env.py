@@ -34,7 +34,7 @@ class DonkeyEnv(gym.Env):
     def __init__(self, level=0, frame_skip=2, max_cte_error=3.0,
                  camera_shape=(120, 160, 3),
                  min_steering=-1, max_steering=1,
-                 min_throttle=0.4, max_throttle=0.6):
+                 min_throttle=0.4, max_throttle=0.6, headless=True):
         # Check for env variable
         exe_path = get_or_download_simulator(os.environ.get('DONKEY_SIM_HOME'))
 
@@ -45,7 +45,6 @@ class DonkeyEnv(gym.Env):
         print("Starting DonkeyGym env")
         # Start Unity simulation subprocess if needed
         self.unity_process = DonkeyUnityProcess()
-        headless = os.environ.get('DONKEY_SIM_HEADLESS', False) == '1'
         self.unity_process.start(exe_path, headless=headless, port=port)
 
         # start simulation com
