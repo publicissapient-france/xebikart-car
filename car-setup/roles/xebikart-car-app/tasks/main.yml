@@ -57,6 +57,6 @@
 
 - name: "install ml package"
   pip:
-    name: "file://{{ user_directory }}/car-ml[rl]"
+    name: "file://{{ user_directory }}/car-ml"
     extra_args: "-e"
     virtualenv: "{{ user_directory }}/env"
