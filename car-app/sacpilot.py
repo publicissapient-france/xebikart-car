@@ -18,7 +18,7 @@ import donkeycar as dk
 from xebikart_app import add_controller, \
     add_throttle, add_steering, add_pi_camera, add_pilot, add_logger
 
-from xebikart_app.parts.rl import SoftActorCriticalModel
+from xebikart_app.parts.rl import MemorySoftActorCriticModel
 from xebikart_app.parts.image import ImageTransformation
 
 import xebikart.images.transformer as image_transformer
@@ -42,7 +42,7 @@ def drive(cfg, args):
     vae_path = args["--vae"]
     add_image_transformation(vehicle, 'cam/image_array', 'transformed/image_array')
     add_image_embedding(vehicle, vae_path, 'transformed/image_array', 'embedded/image_array')
-    add_soft_actor_critical_model(vehicle, model_path, 'embedded/image_array', 'ai/steering', 'ai/throttle')
+    add_soft_actor_critic_model(vehicle, model_path, 'embedded/image_array', 'ai/steering', 'ai/throttle')
 
     add_pilot(vehicle, 'user/mode',
               'user/steering', 'user/throttle',
@@ -93,10 +93,11 @@ def add_image_embedding(vehicle, vae_path, image_input, embedded_output):
     )
 
 
-def add_soft_actor_critical_model(vehicle, sac_path, embedded_input, steering_output, throttle_output):
-    soft_actor_critical_model = SoftActorCriticalModel(sac_path)
+def add_soft_actor_critic_model(vehicle, checkpoint_path, n_history,
+                                  embedded_input, steering_output, throttle_output):
+    soft_actor_critic_model = MemorySoftActorCriticModel(checkpoint_path, n_history)
     vehicle.add(
-        soft_actor_critical_model,
+        soft_actor_critic_model,
         inputs=[
             embedded_input
         ],

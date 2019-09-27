@@ -19,7 +19,7 @@ from donkeycar.parts.transform import Lambda
 from xebikart_app import add_controller, \
     add_throttle, add_steering, add_pi_camera, add_pilot, add_logger
 
-from xebikart_app.parts.keras import SteeringModel
+from xebikart_app.parts.keras import OneOutputModel
 from xebikart_app.parts.image import ImageTransformation
 
 import xebikart.images.transformer as image_transformer
@@ -78,7 +78,7 @@ def add_image_transformation(vehicle, camera_input, transformation_output):
 
 
 def add_steering_model(vehicle, steering_path, fix_throttle, image_input, ai_steering_output, ai_throttle_output):
-    steering_model = SteeringModel()
+    steering_model = OneOutputModel()
     steering_model.load(steering_path)
     vehicle.add(
         steering_model,

@@ -18,7 +18,7 @@ import donkeycar as dk
 from xebikart_app import add_controller, \
     add_throttle, add_steering, add_pi_camera, add_logger
 
-from xebikart_app.parts.keras import SteeringModel
+from xebikart_app.parts.keras import OneOutputModel
 
 import tensorflow as tf
 
@@ -52,10 +52,10 @@ def drive(cfg, args):
 
 
 def add_detection_model(vehicle, detection_path, image_input, ai_output):
-    steering_model = SteeringModel()
-    steering_model.load(detection_path)
+    detection_model = OneOutputModel()
+    detection_model.load(detection_path)
     vehicle.add(
-        steering_model,
+        detection_model,
         inputs=[
             image_input
         ],
