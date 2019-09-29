@@ -15,6 +15,14 @@ def prepare_image_obstacle(image_path, resize_shape=(160, 160)):
     return tf_image
 
 
+def prepare_image_exit(image_path):
+    tf_image = T.read_image(image_path)
+    tf_image = T.normalize(tf_image)
+    tf_image = tf.image.rgb_to_grayscale(tf_image)
+    tf_image = tf.image.crop_to_bounding_box(tf_image, left_margin=0, width=160, height_margin=80, height=40)
+    return tf_image
+
+
 def interpreter_and_details(model_path):
     # Load TFLite model and allocate tensors
 

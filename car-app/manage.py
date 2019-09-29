@@ -29,7 +29,7 @@ from lite_models import predictor_builder
 from lite_models import prepare_image_obstacle
 
 
-def drive(cfg, model_path=None, obstacle_model_path=None):
+def drive(cfg, model_path=None, obstacle_model_path=None, exit_model_path=None):
     vehicle = dk.vehicle.Vehicle()
 
     clock = Timestamp()
@@ -94,6 +94,19 @@ def drive(cfg, model_path=None, obstacle_model_path=None):
             run_condition='run_pilot'
         )
 
+    if exit_model_path:
+        exit_predictor = predictor_builder(exit_model_path, prepare_image_obstacle)
+        vehicle.add(
+            exit_predictor,
+            inputs=[
+                'processed_data/image'
+            ],
+            outputs=[
+                'exit/prediction',
+            ],
+            run_condition='run_pilot'
+        )
+
     driver = Driver()
     vehicle.add(
         driver,
@@ -113,7 +126,8 @@ def drive(cfg, model_path=None, obstacle_model_path=None):
             'car/tx',
             'car/ty',
             'car/tz',
-            'obstacle/prediction'
+            'obstacle/prediction',
+            'exit/prediction'
         ],
         outputs=[
             'angle',
@@ -121,7 +135,8 @@ def drive(cfg, model_path=None, obstacle_model_path=None):
             'run_pilot',
             'imu_enabled',
             'lidar_enabled',
-            'stop'
+            'stop_obstacle',
+            'stop_exit'
         ]
     )
 
