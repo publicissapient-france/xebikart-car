@@ -89,7 +89,7 @@ def add_steering_model(vehicle, steering_path, fix_throttle, image_input, ai_ste
             ai_steering_output
         ]
     )
-    fix_throttle_lb = Lambda(lambda: fix_throttle)
+    fix_throttle_lb = Lambda(lambda: float(fix_throttle))
     vehicle.add(
         fix_throttle_lb,
         outputs=[

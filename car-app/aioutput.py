@@ -17,8 +17,11 @@ import donkeycar as dk
 
 from xebikart_app import add_controller, \
     add_throttle, add_steering, add_pi_camera, add_logger
+from xebikart_app.parts.image import ImageTransformation
 
 from xebikart_app.parts.keras import OneOutputModel
+
+import xebikart.images.transformer as image_transformer
 
 import tensorflow as tf
 
@@ -36,7 +39,8 @@ def drive(cfg, args):
 
     # Model
     model_path = args["--model"]
-    add_detection_model(vehicle, model_path, 'cam/image_array', 'ai/output')
+    add_image_transformation(vehicle, 'cam/image_array', 'transformed/image_array')
+    add_detection_model(vehicle, model_path, 'transformed/image_array', 'ai/output')
 
     add_steering(vehicle, cfg, 'user/steering')
     add_throttle(vehicle, cfg, 'user/throttle')
@@ -48,6 +52,23 @@ def drive(cfg, args):
     vehicle.start(
         rate_hz=cfg.DRIVE_LOOP_HZ,
         max_loop_count=cfg.MAX_LOOPS
+    )
+
+
+def add_image_transformation(vehicle, camera_input, transformation_output):
+    image_transformation = ImageTransformation([
+        image_transformer.normalize,
+        image_transformer.generate_crop_fn(0, 80, 160, 40),
+        tf.image.rgb_to_grayscale
+    ])
+    vehicle.add(
+        image_transformation,
+        inputs=[
+            camera_input
+        ],
+        outputs=[
+            transformation_output
+        ]
     )
 
 
