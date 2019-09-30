@@ -77,10 +77,40 @@ def add_image_transformation(vehicle, camera_input, transformation_output):
     )
 
 
+def interpreter_and_details(vae_path):
+    # Load TFLite model and allocate tensors
+
+    interpreter = tf.lite.Interpreter(model_path=vae_path)
+    interpreter.allocate_tensors()
+
+    # Get input and output tensors
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+    input_shape = input_details[0]['shape']
+
+    return interpreter, input_details, output_details, input_shape
+
+
+def predictor_builder(interpreter, input_details, output_details):
+    def predictor(input_image):
+        interpreter.set_tensor(input_details[0]['index'], input_image)
+        interpreter.invoke()
+
+        # The function `get_tensor()` returns a copy of the tensor data.
+        # Use `tensor()` in order to get a pointer to the tensor.
+        output_data = interpreter.get_tensor(output_details[0]['index'])
+
+        return output_data[0][0]
+
+    return predictor
+
+
 def add_image_embedding(vehicle, vae_path, image_input, embedded_output):
-    vae = tf.keras.models.load_model(vae_path)
+    interpreter, input_details, output_details, input_shape = interpreter_and_details(vae_path)
+    predictor = predictor_builder(interpreter, input_details, output_details)
+    #vae = tf.keras.models.load_model(vae_path)
     image_embedding = ImageTransformation([
-        image_transformer.generate_vae_fn(vae)
+        predictor
     ])
     vehicle.add(
         image_embedding,

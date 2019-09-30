@@ -140,6 +140,30 @@ def add_pilot(vehicle, mode_input,
     )
 
 
+def add_pilot_emergency_exit(vehicle, user_steering_input, user_throttle_input,
+                             ai_condition_output, steering_output, throttle_output):
+
+    def _pilot(ai_condition, user_steering, user_throttle):
+        if ai_condition:
+            return 0., 0.
+        else:
+            return user_steering, user_throttle
+
+    decision_lb = Lambda(_pilot)
+    vehicle.add(
+        decision_lb,
+        inputs=[
+            ai_condition_output,
+            user_steering_input,
+            user_throttle_input
+        ],
+        outputs=[
+            steering_output,
+            throttle_output
+        ]
+    )
+
+
 def add_logger(vehicle, prefix, input):
     def _log(i):
         print(prefix, ": ", i)
