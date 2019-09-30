@@ -7,3 +7,6 @@ lib/
 include/
 ansible-vault
 wpa_supplicant.conf
+
+__pycache__
+*.pyc

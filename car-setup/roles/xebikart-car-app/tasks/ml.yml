@@ -1,0 +1,31 @@
+---
+
+- name: "create ml directory"
+  file:
+    path: "{{ user_directory }}/car-ml"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+    state: "directory"
+
+- name: "copy ml sources"
+  copy:
+    src: "{{ role_path }}/../../../car-ml/xebikart"
+    dest: "{{ user_directory }}/car-ml"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+
+- name: "copy ml setup.py"
+  copy:
+    src: "{{ role_path }}/../../../car-ml/setup.py"
+    dest: "{{ user_directory }}/car-ml"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+
+- name: "install ml package"
+  pip:
+    name: "file://{{ user_directory }}/car-ml"
+    extra_args: "-e"
+    virtualenv: "{{ user_directory }}/env"

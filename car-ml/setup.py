@@ -7,6 +7,7 @@ setup(
     install_requires=[
         'numpy==1.14.5',
         'requests==2.22.0',
+        'tensorflow==1.14.0',
         'donkeycar'
     ]
 )

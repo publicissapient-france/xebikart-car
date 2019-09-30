@@ -17,14 +17,14 @@ import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
 from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.datastore import TubGroup, TubWriter
+from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
-from driver import Driver
-from lidar import RPLidar, BreezySLAM
-from imu import Mpu6050
-from mqtt import MQTTClient
+from xebikart_app.parts.driver import Driver
+from xebikart_app.parts.lidar import RPLidar, BreezySLAM
+from xebikart_app.parts.imu import Mpu6050
+from xebikart_app.parts.mqtt import MQTTClient
 
 
 def drive(cfg, model_path=None):
