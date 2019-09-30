@@ -83,36 +83,34 @@ class DonkeyEnv(gym.Env):
         # wait until loaded
         self.viewer.wait_until_loaded()
 
-    def close_connection(self):
-        return self.viewer.close_connection()
-
-    def exit_scene(self):
-        self.viewer.handler.send_exit_scene()
-
-    def observation(self, observation):
-        return observation
-
-    def is_game_over(self):
+    def is_game_over(self, info):
         """
         :return: (bool)
         """
-        return self.viewer.has_hit() or math.fabs(self.viewer.cte()) > self.max_cte_error
+        return info["hit"] or math.fabs(info["cte"]) > self.max_cte_error
 
-    def donkey_reward(self, done):
+    def info(self):
+        viewer_info = self.viewer.info()
+        viewer_info["norm_throttle"] = (viewer_info["throttle"] - self.min_throttle) / (self.max_throttle - self.min_throttle)
+        viewer_info["ref_throttle"] = (viewer_info["throttle"] / self.max_throttle)
+        return viewer_info
+
+    def donkey_reward(self, info, done):
         """
         Compute reward:
         - +1 life bonus for each step + throttle bonus
         - -10 crash penalty - penalty for large throttle during a crash
 
+        :param info: (dict)
         :param done: (bool)
         :return: (float)
         """
         if done:
             # penalize the agent for getting off the road fast
-            norm_throttle = (self.viewer.last_throttle() - self.min_throttle) / (self.max_throttle - self.min_throttle)
+            norm_throttle = (info["throttle"] - self.min_throttle) / (self.max_throttle - self.min_throttle)
             return self.REWARD_CRASH - self.CRASH_SPEED_WEIGHT * norm_throttle
         # 1 per timesteps + throttle
-        throttle_reward = self.THROTTLE_REWARD_WEIGHT * (self.viewer.last_throttle() / self.max_throttle)
+        throttle_reward = self.THROTTLE_REWARD_WEIGHT * (info["throttle"] / self.max_throttle)
         return 1 + throttle_reward
 
     def step(self, action):
@@ -132,9 +130,9 @@ class DonkeyEnv(gym.Env):
         for _ in range(self.frame_skip):
             self.viewer.take_action(action)
             observation = self.viewer.observe()
-            done = self.is_game_over()
-            reward = self.donkey_reward(done)
-            info = {}
+            info = self.info()
+            done = self.is_game_over(info)
+            reward = self.donkey_reward(info, done)
 
         return observation, reward, done, info
 

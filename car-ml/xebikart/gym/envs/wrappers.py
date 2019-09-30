@@ -145,6 +145,7 @@ class HistoryBasedWrapper(Wrapper):
     def step(self, action):
         action = self.action(action)
         observation, reward, done, info = self.env.step(action)
+        info["command_history"] = self.command_history
         return self.observation(observation), self.reward(reward), done, info
 
     def action(self, action):
@@ -188,3 +189,13 @@ class HistoryBasedWrapper(Wrapper):
         if jerk_penalty > 0 and reward > 0:
             reward = 0
         return reward - jerk_penalty
+
+
+class ExternalRewardFunctionsWrapper(Wrapper):
+    def __init__(self, env, reward_fn):
+        super(ExternalRewardFunctionsWrapper, self).__init__(env)
+        self.reward_fn = reward_fn if isinstance(reward_fn, list) else [reward_fn]
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        return observation, self.reward_fn(reward, done, info), done, info

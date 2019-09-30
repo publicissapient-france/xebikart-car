@@ -85,6 +85,18 @@ class DonkeyUnitySimController:
     def last_throttle(self):
         return self.handler.last_throttle
 
+    def info(self):
+        return {
+            "x": self.handler.x,
+            "y": self.handler.y,
+            "z": self.handler.z,
+            "speed": self.handler.speed,
+            "cte": self.handler.cte,
+            "hit": self.handler.hit != "none",
+            "throttle": self.handler.last_throttle,
+            "steering": self.handler.steering_angle
+        }
+
 
 class DonkeyUnitySimHandler(IMesgHandler):
     """
