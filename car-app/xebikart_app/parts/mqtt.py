@@ -2,6 +2,10 @@ import json
 import time
 import paho.mqtt.client as mqtt
 import logging
+from PIL import Image
+from io import BytesIO
+import base64
+import numpy as np
 
 import config
 
@@ -56,7 +60,8 @@ class MQTTClient:
             mode,
             user_angle, user_throttle,  # from controller
             x, y, z, angle,  # from lidar
-            dx, dy, dz, tx, ty, tz  # from imu
+            dx, dy, dz, tx, ty, tz,
+            image  # from imu
     ):
         self.output_payload = {
             'car': config.CAR_ID,
@@ -82,6 +87,15 @@ class MQTTClient:
                 'z': tz
             }
         }
+        try:
+            img = Image.fromarray(np.uint8(image))
+            bytes = BytesIO()
+            img.save(bytes, format='jpeg')
+            frame = bytes.getvalue()
+            print(base64.b64encode(frame))
+        except Exception as e:
+            raise e
+
         if self.input_payload is not None:
             return self.input_payload['mode']
         else:

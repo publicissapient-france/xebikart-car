@@ -200,7 +200,8 @@ def drive(cfg, model_path=None):
             'car/dz',
             'car/tx',
             'car/ty',
-            'car/tz'
+            'car/tz',
+            'cam/image_array'
         ],
         outputs=[
             'remote/mode'
