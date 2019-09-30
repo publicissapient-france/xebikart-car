@@ -32,7 +32,7 @@ class MQTTClient:
     def on_message(self, mqttc, obj, msg):
         logging.debug("Message received: " + str(msg.payload))
         try:
-            text_paylod = msg.payload.decode("UTF-8")
+            text_payload = msg.payload.decode("UTF-8")
             dict_payload = json.loads(text_payload)
             if 'mode' in dict_payload and 'car' in dict_payload and dict_payload['car'] == config.CAR_ID:
                 self.input_payload['mode'] = dict_payload['mode']
