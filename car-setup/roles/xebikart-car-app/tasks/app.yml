@@ -1,0 +1,23 @@
+---
+
+- name: "create directory"
+  file:
+    path: "{{ user_directory }}/{{ app_name }}"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+    state: "directory"
+
+- name: "copy sources"
+  copy:
+    src: "{{ role_path }}/../../../{{ app_name }}/" # ending slash only copies content inside directory, not directory itself
+    dest: "{{ user_directory }}/{{ app_name }}"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+
+- name: "install app dependencies"
+  pip:
+    requirements: "{{ user_directory }}/{{ app_name }}/requirements.txt"
+    virtualenv: "{{ user_directory }}/env"
+
