@@ -27,12 +27,12 @@ class DonkeyUnityProcess(object):
         # Launch Unity environment
         if headless:
             self.process = subprocess.Popen(
-                " ".join(['xvfb-run -s "-screen 0 600x400x24"', sim_path,'-batchmode'] + port_args),
-                shell=True,
+                [sim_path, '-batchmode'] + port_args,
                 preexec_fn=os.setsid)
         else:
             self.process = subprocess.Popen(
-                [sim_path] + port_args)
+                [sim_path] + port_args,
+                preexec_fn=os.setsid)
 
         print("Donkey subprocess started")
 
