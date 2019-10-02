@@ -19,13 +19,11 @@ from xebikart_app import add_controller, \
     add_throttle, add_steering, add_pi_camera, add_pilot, add_logger
 
 from xebikart_app.parts.rl import MemorySoftActorCriticModel
-from xebikart_app.parts.image import ImageTransformation
+from xebikart_app.parts.image import TFSessImageTransformation, ImageTransformation
 
 import xebikart.images.transformer as image_transformer
 
 import tensorflow as tf
-
-tf.compat.v1.enable_eager_execution()
 
 
 def drive(cfg, args):
@@ -42,7 +40,8 @@ def drive(cfg, args):
     vae_path = args["--vae"]
     add_image_transformation(vehicle, 'cam/image_array', 'transformed/image_array')
     add_image_embedding(vehicle, vae_path, 'transformed/image_array', 'embedded/image_array')
-    add_soft_actor_critic_model(vehicle, model_path, 'embedded/image_array', 'ai/steering', 'ai/throttle')
+    add_soft_actor_critic_model(vehicle, model_path, 10, 0.19, 0.25,
+                                'embedded/image_array', 'ai/steering', 'ai/throttle')
 
     add_pilot(vehicle, 'user/mode',
               'user/steering', 'user/throttle',
@@ -61,7 +60,7 @@ def drive(cfg, args):
 
 
 def add_image_transformation(vehicle, camera_input, transformation_output):
-    image_transformation = ImageTransformation([
+    image_transformation = TFSessImageTransformation((120, 160, 3), [
         image_transformer.normalize,
         image_transformer.generate_crop_fn(0, 40, 160, 80),
         image_transformer.edges
@@ -77,40 +76,10 @@ def add_image_transformation(vehicle, camera_input, transformation_output):
     )
 
 
-def interpreter_and_details(vae_path):
-    # Load TFLite model and allocate tensors
-
-    interpreter = tf.lite.Interpreter(model_path=vae_path)
-    interpreter.allocate_tensors()
-
-    # Get input and output tensors
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
-    input_shape = input_details[0]['shape']
-
-    return interpreter, input_details, output_details, input_shape
-
-
-def predictor_builder(interpreter, input_details, output_details):
-    def predictor(input_image):
-        interpreter.set_tensor(input_details[0]['index'], input_image)
-        interpreter.invoke()
-
-        # The function `get_tensor()` returns a copy of the tensor data.
-        # Use `tensor()` in order to get a pointer to the tensor.
-        output_data = interpreter.get_tensor(output_details[0]['index'])
-
-        return output_data[0][0]
-
-    return predictor
-
-
 def add_image_embedding(vehicle, vae_path, image_input, embedded_output):
-    interpreter, input_details, output_details, input_shape = interpreter_and_details(vae_path)
-    predictor = predictor_builder(interpreter, input_details, output_details)
-    #vae = tf.keras.models.load_model(vae_path)
+    vae = tf.keras.models.load_model(vae_path)
     image_embedding = ImageTransformation([
-        predictor
+        image_transformer.generate_vae_fn(vae)
     ])
     vehicle.add(
         image_embedding,
@@ -123,9 +92,9 @@ def add_image_embedding(vehicle, vae_path, image_input, embedded_output):
     )
 
 
-def add_soft_actor_critic_model(vehicle, checkpoint_path, n_history,
-                                  embedded_input, steering_output, throttle_output):
-    soft_actor_critic_model = MemorySoftActorCriticModel(checkpoint_path, n_history)
+def add_soft_actor_critic_model(vehicle, checkpoint_path, n_history, min_throttle, max_throttle,
+                                embedded_input, steering_output, throttle_output):
+    soft_actor_critic_model = MemorySoftActorCriticModel(checkpoint_path, n_history, min_throttle, max_throttle)
     vehicle.add(
         soft_actor_critic_model,
         inputs=[

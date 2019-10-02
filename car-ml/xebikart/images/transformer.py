@@ -1,4 +1,6 @@
 import tensorflow as tf
+import numpy as np
+
 import random
 
 
@@ -85,8 +87,8 @@ def generate_vae_fn(vae):
     :param vae: tf.keras.Model
     :return:
     """
-    vae_encoder = vae.get_layer('encoder')
+    vae_encoder = vae
 
     def _transform(tf_image):
-        return tf.squeeze(vae_encoder.predict(tf.expand_dims(tf_image, 0))[2])
+        return np.squeeze(vae_encoder.predict(np.expand_dims(tf_image, 0)))
     return _transform

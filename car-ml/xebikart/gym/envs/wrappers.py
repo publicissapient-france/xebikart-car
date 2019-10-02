@@ -73,25 +73,19 @@ class EdgingObservationWrapper(ObservationWrapper):
 
 
 class ConvVariationalAutoEncoderObservationWrapper(ObservationWrapper):
-    def __init__(self, env, vae, normalize=False):
+    def __init__(self, env, vae):
         """
         Apply VAE (Variational Auto Encoder) on observation.
         Based on keras implementation
 
         :param env:
         :param vae: tensorflow.keras.model
-        :param normalize: Normalize observation before encoding
         """
         super(ConvVariationalAutoEncoderObservationWrapper, self).__init__(env)
 
-        # TODO: find a way to reuse xebipreprocessor.normalize
-        self.normalize_ratio = 255. if normalize else 1.
-
         self.vae = vae
-        self.vae_encoder = vae.get_layer('encoder')
-        self.vae_encoder_z = self.vae_encoder.get_layer('z')
-        self.vae_input_shape = self.vae_encoder.input_shape[1:]
-        z_size = self.vae_encoder_z.output_shape[1]
+        self.vae_input_shape = self.vae.input_shape[1:]
+        z_size = self.vae.output_shape[1]
 
         original_shape = self.env.observation_space.shape
 
@@ -103,12 +97,11 @@ class ConvVariationalAutoEncoderObservationWrapper(ObservationWrapper):
                                      dtype=np.float32)
 
     def observation(self, observation):
-        observation = np.reshape(observation, (1, ) + self.vae_input_shape) / self.normalize_ratio
-        return self.vae_encoder.predict(observation)[2]
+        normalize_obs = observation / 255.
+        normalize_obs = np.expand_dims(normalize_obs, 0)
+        return self.vae.predict(normalize_obs)
 
 
-# TODO: find a way to rename max_steering_diff
-# TODO: will it work ?
 class HistoryBasedWrapper(Wrapper):
     def __init__(self, env, n_command_history, max_steering_diff, jerk_penalty_weight):
         """
