@@ -92,3 +92,10 @@ def generate_vae_fn(vae):
     def _transform(tf_image):
         return np.squeeze(vae_encoder.predict(np.expand_dims(tf_image, 0)))
     return _transform
+
+
+def normalize_gray_scale(tf_image):
+    tf_image = normalize(tf_image)
+    tf_image = tf.image.rgb_to_grayscale(tf_image)
+    return tf_image
+
