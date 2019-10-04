@@ -9,31 +9,34 @@ spec:
   template:
     spec:
       initContainers:
-      - name: download-tubes
-        image: 'google/cloud-sdk:alpine'
-        command: ["gsutil", "-m"]
-        args: ["cp", "gs://xebikart-tubes/archives/*.tar.gz", "xebikart-ml-tubes"]
-        workingDir: /workspace
-        volumeMounts:
-        - name: workspace
-          mountPath: /workspace
       - name: git-sync
-        image: 'k8s.gcr.io/git-sync:v9.3.76'
+        image: 'k8s.gcr.io/git-sync:v3.1.2'
         args: [
-          "-ssh",
           "-one-time",
-          "-repo=git@github.com:xebia-france/xebikart-car-app.git",
+          "-repo=https://github.com/xebia-france/xebikart-car.git",
           "-root=/workspace",
-          "-dest=xebikart-car-app",
+          "-dest=xebikart-car",
           "-branch=master"]
         volumeMounts:
-        - name: git-secret
-          mountPath: /etc/git-secret
         - name: workspace
           mountPath: /workspace
       - name: copy-workspace
         image: 'alpine:3.7'
-        args: ["cp", "-r", "/workspace/xebikart-car-app/car-ml/workspace/* /workspace/"]
+        args: ["sh", "-c", "cp -r /workspace/xebikart-car/car-ml/workspace/* /workspace/"]
+        workingDir: /workspace
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      - name: create-tubes-directory
+        image: 'alpine:3.7'
+        args: ["mkdir", "-p", "/workspace/xebikart-ml-tubes"]
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+      - name: download-tubes
+        image: 'google/cloud-sdk:alpine'
+        command: ["gsutil", "-m"]
+        args: ["cp", "gs://xebikart-dataset/*.tar.gz", "xebikart-ml-tubes"]
         workingDir: /workspace
         volumeMounts:
         - name: workspace
@@ -43,8 +46,8 @@ spec:
         image: "{will_be_replace}"
         command: ["{will_be_replace}"]
         volumeMounts:
-        - mountPath: /workspace/xebikart-ml-tubes
-          name: xebikart-tubes
+        - name: workspace
+          mountPath: /workspace
       restartPolicy: Never
       volumes:
       - name: workspace

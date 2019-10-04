@@ -1,5 +1,5 @@
 {
-    "kube-context": "gke_keynote-xebicon-19_europe-west1-b_standard-cluster-mlflow",
+    "kube-context": "gke_xebikart-dev-1_europe-west1_xebikart-gke-dev-1",
     "kube-job-template-path": "mlflow/config/gke_job_template.yaml",
-    "repository-uri": "eu.gcr.io/keynote-xebicon-19/xebikart_ml"
+    "repository-uri": "eu.gcr.io/xebikart-dev-1/xebikart_ml"
 }
