@@ -14,29 +14,28 @@ def interpreter_and_details(model_path) :
     """
 
     # Load TFLite model and allocate tensors
-    interpreter = lite.Interpreter(model_path = model_path)
+    interpreter = lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
 
     # Get input and output tensors
     input_details = interpreter.get_input_details()
     output_details = interpreter.get_output_details()
-    input_shape = input_details[0]['shape']
 
-    return interpreter, input_details, output_details, input_shape
+    return interpreter, input_details, output_details
 
 
-def predictor_builder(model_path, preprocess):
+def predictor_builder(model_path, preprocess_fn):
     """
     get a predictor from a lite model and the corresponding preprocess
     :param model_path: lite model path
-    :param preprocess: function used to process the image
+    :param preprocess_fn: function used to process the image
     :return: predictor : a function that take a tf image and make the prediction
     """
-    interpreter, input_details, output_details, input_shape = interpreter_and_details(model_path)
+    interpreter, input_details, output_details = interpreter_and_details(model_path)
 
     def predictor(input_image):
-        input_image = preprocess(input_image)
-        input_image = tf.reshape(input_image, (1, input_image.shape[0], input_image.shape[1], 1))
+        input_image = preprocess_fn(input_image)
+        input_image = tf.expand_dims(input_image)
 
         interpreter.set_tensor(input_details[0]['index'], input_image)
         interpreter.invoke()
