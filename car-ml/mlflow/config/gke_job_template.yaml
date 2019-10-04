@@ -9,24 +9,6 @@ spec:
   template:
     spec:
       initContainers:
-      - name: git-sync
-        image: 'k8s.gcr.io/git-sync:v3.1.2'
-        args: [
-          "-one-time",
-          "-repo=https://github.com/xebia-france/xebikart-car.git",
-          "-root=/workspace",
-          "-dest=xebikart-car",
-          "-branch=master"]
-        volumeMounts:
-        - name: workspace
-          mountPath: /workspace
-      - name: copy-workspace
-        image: 'alpine:3.7'
-        args: ["sh", "-c", "cp -r /workspace/xebikart-car/car-ml/workspace/* /workspace/"]
-        workingDir: /workspace
-        volumeMounts:
-        - name: workspace
-          mountPath: /workspace
       - name: create-tubes-directory
         image: 'alpine:3.7'
         args: ["mkdir", "-p", "/workspace/xebikart-ml-tubes"]
