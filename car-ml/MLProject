@@ -5,8 +5,11 @@ docker_env:
 
 entry_points:
     main:
-        parameters:
-            total_timesteps: {type: int, default: 10000}
-        command: "papermill /workspace/reinforcement_learning/soft_actor_critical.ipynb outputs_soft_actor_critical.ipynb"
+        command: "python execute_and_log_notebook.py"
     vae:
-        command: "papermill /workspace/auto_encoder/variational_auto_encoder.ipynb outputs_variational_auto_encoder.ipynb"
+        command: "python execute_and_log_notebook.py --input workspace/auto_encoder/variational_auto_encoder.ipynb --output output_variational_auto_encoder.ipynb"
+    reinforcement_learning:
+        command: "python execute_and_log_notebook.py --input workspace/reinforcement_learning/soft_actor_critic.ipynb --output output_soft_actor_critic.ipynb"
+    cnn:
+        command: "python execute_and_log_notebook.py --input workspace/supervised_models/CNN.ipynb --output output_cnn.ipynb"
+
