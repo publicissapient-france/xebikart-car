@@ -49,7 +49,10 @@ RUN pip3 install -r /code/requirements.txt
 
 # patch for tensorflow 1.13.1 from intel-tensorflow
 RUN pip3 uninstall -y intel-tensorflow Keras-Applications Keras-Preprocessing \
-    && pip3 install tensorflow
+    && pip3 install tensorflow==1.14
+
+# Install seaborn
+RUN pip3 install seaborn
 
 # Install xebikart package
 COPY setup.py /code/
