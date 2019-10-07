@@ -47,14 +47,10 @@ RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
 COPY requirements.txt /code/
 RUN pip3 install -r /code/requirements.txt
 
-# patch for tensorflow 1.13.1 from intel-tensorflow
-RUN pip3 uninstall -y intel-tensorflow Keras-Applications Keras-Preprocessing \
-    && pip3 install tensorflow
-
 # Install xebikart package
 COPY setup.py /code/
 COPY xebikart /code/xebikart
-RUN pip3 install /code/[gym,rl]
+RUN pip3 install /code/
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 
