@@ -103,15 +103,13 @@ class ConvVariationalAutoEncoderObservationWrapper(ObservationWrapper):
 
 
 class HistoryBasedWrapper(Wrapper):
-    def __init__(self, env, n_command_history, max_steering_diff, jerk_penalty_weight):
+    def __init__(self, env, n_command_history):
         """
         Add historical actions to observation and apply a penalty in case of "jerk move".
         A "jerk move" is consider each time two consecutive steering diff is higher than max_steering_diff.
 
         :param env:
         :param n_command_history:
-        :param max_steering_diff: Max diff between two consecutive steering to consider a "jerk move"
-        :param jerk_penalty_weight: Penalty to apply in case of "jerk move"
         """
         super(HistoryBasedWrapper, self).__init__(env)
 
@@ -127,10 +125,6 @@ class HistoryBasedWrapper(Wrapper):
         # shape (1, x) to keep same as observation
         self.command_history = np.zeros((self.n_commands * self.n_command_history))
 
-        # max steering and penalty
-        self.max_steering_diff = max_steering_diff
-        self.jerk_penalty_weight = jerk_penalty_weight
-
         # z latent vector from the VAE (encoded input image)
         self.observation_space = Box(low=np.finfo(np.float32).min,
                                      high=np.finfo(np.float32).max,
@@ -145,8 +139,7 @@ class HistoryBasedWrapper(Wrapper):
     def step(self, action):
         action = self.action(action)
         observation, reward, done, info = self.env.step(action)
-        info["command_history"] = self.command_history
-        return self.observation(observation), self.reward(reward), done, info
+        return self.observation(observation), reward, done, info
 
     def action(self, action):
         # Clip steering angle rate to enforce continuity
@@ -166,36 +159,3 @@ class HistoryBasedWrapper(Wrapper):
         command_history_reshaped = np.reshape(self.command_history, (1, self.n_commands * self.n_command_history))
         command_history_reshaped = np.concatenate((observation, command_history_reshaped), axis=-1)
         return np.squeeze(command_history_reshaped)
-
-    def reward(self, reward):
-        """
-        Add a continuity penalty to limit jerk.
-        :return: (float)
-        """
-        jerk_penalty = 0
-        # Take only last command into account
-        for i in range(1):
-            steering = self.command_history[-2 * (i + 1)]
-            prev_steering = self.command_history[-2 * (i + 2)]
-            steering_diff = (prev_steering - steering)
-
-            if abs(steering_diff) > self.max_steering_diff:
-                error = abs(steering_diff) - self.max_steering_diff
-                jerk_penalty += self.jerk_penalty_weight * (1 + error ** 2)
-            else:
-                jerk_penalty += 0
-
-        # Cancel reward if the continuity constrain is violated
-        if jerk_penalty > 0 and reward > 0:
-            reward = 0
-        return reward - jerk_penalty
-
-
-class ExternalRewardFunctionsWrapper(Wrapper):
-    def __init__(self, env, reward_fn):
-        super(ExternalRewardFunctionsWrapper, self).__init__(env)
-        self.reward_fn = reward_fn if isinstance(reward_fn, list) else [reward_fn]
-
-    def step(self, action):
-        observation, reward, done, info = self.env.step(action)
-        return observation, self.reward_fn(reward, done, info), done, info
