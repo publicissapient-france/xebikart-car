@@ -3,7 +3,7 @@
 def create_env(vae, level=4, frame_skip=2, max_cte_error=3.0,
                min_steering=-1, max_steering=1,
                min_throttle=0.1, max_throttle=0.3,
-               n_history=10,
+               max_steering_diff=0.15, n_history=10,
                headless=True, reward_fn=None):
 
     from xebikart.gym.envs.donkey_env import DonkeyEnv
@@ -25,7 +25,7 @@ def create_env(vae, level=4, frame_skip=2, max_cte_error=3.0,
     # VAE
     vae_obs = ConvVariationalAutoEncoderObservationWrapper(edging_obs, vae)
     # History
-    history_obs = HistoryBasedWrapper(vae_obs, n_command_history=n_history)
+    history_obs = HistoryBasedWrapper(vae_obs, n_command_history=n_history, max_steering_diff=max_steering_diff)
 
     return history_obs
 

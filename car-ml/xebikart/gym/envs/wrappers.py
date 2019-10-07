@@ -103,7 +103,7 @@ class ConvVariationalAutoEncoderObservationWrapper(ObservationWrapper):
 
 
 class HistoryBasedWrapper(Wrapper):
-    def __init__(self, env, n_command_history):
+    def __init__(self, env, n_command_history, max_steering_diff):
         """
         Add historical actions to observation and apply a penalty in case of "jerk move".
         A "jerk move" is consider each time two consecutive steering diff is higher than max_steering_diff.
@@ -124,6 +124,9 @@ class HistoryBasedWrapper(Wrapper):
         self.n_command_history = n_command_history
         # shape (1, x) to keep same as observation
         self.command_history = np.zeros((self.n_commands * self.n_command_history))
+
+        # Max steering diff
+        self.max_steering_diff = max_steering_diff
 
         # z latent vector from the VAE (encoded input image)
         self.observation_space = Box(low=np.finfo(np.float32).min,

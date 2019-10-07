@@ -117,7 +117,7 @@ class DonkeyEnv(gym.Env):
             observation = self.viewer.observe()
             info = self.info()
             done = self.is_game_over(info)
-            reward = self.reward_fn(0, info, done)
+            reward = self.reward_fn(0, done, info)
 
         return observation, reward, done, info
 
