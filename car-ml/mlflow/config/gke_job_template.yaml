@@ -7,6 +7,9 @@ spec:
   ttlSecondsAfterFinished: 100
   backoffLimit: 0
   template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       initContainers:
       - name: create-tubes-directory
@@ -35,6 +38,10 @@ spec:
           mountPath: /workspace
         - name: "service-account"
           mountPath: "/var/run/secret/cloud.google.com"
+        resources:
+          requests:
+            cpu: 300m
+            memory: 1500Mi
       restartPolicy: Never
       volumes:
       - name: workspace
