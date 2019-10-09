@@ -12,3 +12,5 @@ jupyter_tensorboard
 notebook==5.7.8
 # MLFlow
 mlflow>=1.1.0
+#seaborn
+seaborn
