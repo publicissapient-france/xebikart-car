@@ -10,6 +10,7 @@ from gym import spaces
 from xebikart.gym.core.donkey_proc import DonkeyUnityProcess
 from xebikart.gym.core.donkey_sim import DonkeyUnitySimController
 from xebikart.gym.utils import get_or_download_simulator
+from xebikart.gym.envs import rewards
 
 
 class DonkeyEnv(gym.Env):
@@ -34,7 +35,8 @@ class DonkeyEnv(gym.Env):
     def __init__(self, level=0, frame_skip=2, max_cte_error=3.0,
                  camera_shape=(120, 160, 3),
                  min_steering=-1, max_steering=1,
-                 min_throttle=0.4, max_throttle=0.6, headless=True):
+                 min_throttle=0.4, max_throttle=0.6,
+                 reward_fn=None, headless=True):
         # Check for env variable
         exe_path = get_or_download_simulator(os.environ.get('DONKEY_SIM_HOME'))
 
@@ -62,12 +64,16 @@ class DonkeyEnv(gym.Env):
         # camera_shape
         self.camera_shape = camera_shape
 
-        # reward parameters
-        self.THROTTLE_REWARD_WEIGHT = 0.1
-        # Negative reward for getting off the road
-        self.REWARD_CRASH = -10
-        # Penalize the agent even more when being fast
-        self.CRASH_SPEED_WEIGHT = 5
+        # reward function
+        default_reward_fn = rewards.speed(
+            min_throttle=min_throttle,
+            max_throttle=max_throttle,
+            base_reward_weight=1,
+            throttle_reward_weight=0.1,
+            crash_reward_weight=-10,
+            crash_speed_reward_weight=-5
+        )
+        self.reward_fn = reward_fn if reward_fn is not None else default_reward_fn
 
         # steering + throttle, action space must be symmetric
         self.action_space = spaces.Box(low=np.array([-1, -1]),
@@ -83,37 +89,14 @@ class DonkeyEnv(gym.Env):
         # wait until loaded
         self.viewer.wait_until_loaded()
 
-    def close_connection(self):
-        return self.viewer.close_connection()
-
-    def exit_scene(self):
-        self.viewer.handler.send_exit_scene()
-
-    def observation(self, observation):
-        return observation
-
-    def is_game_over(self):
+    def is_game_over(self, info):
         """
         :return: (bool)
         """
-        return self.viewer.has_hit() or math.fabs(self.viewer.cte()) > self.max_cte_error
+        return info["hit"] or math.fabs(info["cte"]) > self.max_cte_error
 
-    def donkey_reward(self, done):
-        """
-        Compute reward:
-        - +1 life bonus for each step + throttle bonus
-        - -10 crash penalty - penalty for large throttle during a crash
-
-        :param done: (bool)
-        :return: (float)
-        """
-        if done:
-            # penalize the agent for getting off the road fast
-            norm_throttle = (self.viewer.last_throttle() - self.min_throttle) / (self.max_throttle - self.min_throttle)
-            return self.REWARD_CRASH - self.CRASH_SPEED_WEIGHT * norm_throttle
-        # 1 per timesteps + throttle
-        throttle_reward = self.THROTTLE_REWARD_WEIGHT * (self.viewer.last_throttle() / self.max_throttle)
-        return 1 + throttle_reward
+    def info(self):
+        return self.viewer.info()
 
     def step(self, action):
         """
@@ -132,9 +115,9 @@ class DonkeyEnv(gym.Env):
         for _ in range(self.frame_skip):
             self.viewer.take_action(action)
             observation = self.viewer.observe()
-            done = self.is_game_over()
-            reward = self.donkey_reward(done)
-            info = {}
+            info = self.info()
+            done = self.is_game_over(info)
+            reward = self.reward_fn(0, done, info)
 
         return observation, reward, done, info
 
