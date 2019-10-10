@@ -1,6 +1,6 @@
 FROM python:3.6
 
-ARG SIMULATOR_PATH=simulators/DonkeySimLinux.zip
+ARG SIMULATOR_PATH=car-ml/simulators/DonkeySimLinux.zip
 
 # Add tini
 ENV TINI_VERSION v0.6.0
@@ -28,24 +28,15 @@ ENV DONKEY_SIM_HEADLESS 1
 
 # Supervisor
 RUN apt update && apt install -y supervisor && rm -rf /var/lib/apt/lists/*
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY car-ml/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 RUN mkdir -p /var/log/supervisord/
 
-# Python requirements for dev
-COPY dev-requirements.txt .
-RUN pip3 install -r dev-requirements.txt
+# Python requirements for ml
+COPY car-ml/requirements.txt .
+RUN pip3 install -r requirements.txt
 
 # MLFlow
 ENV MLFLOW_TRACKING_URI file:/workspace/mlruns
-
-# Add tensorboard
-RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
-  apt update && apt install nodejs npm && jupyter labextension install jupyterlab_tensorboard \
-  && rm -rf /var/lib/apt/lists/*
-
-# Install xebikart requirements
-COPY requirements.txt /code/
-RUN pip3 install -r /code/requirements.txt
 
 # Install xebikart package
 COPY setup.py /code/

@@ -2,7 +2,7 @@ from donkeycar.parts.transform import Lambda
 
 
 def add_publish_to_mqtt(vehicle, steering_input, throttle_input):
-    from xebikart_app.parts.mqtt import MQTTClient
+    from xebikart.parts.mqtt import MQTTClient
 
     mqtt_client = MQTTClient()
     vehicle.add(
@@ -30,8 +30,8 @@ def add_publish_to_mqtt(vehicle, steering_input, throttle_input):
 
 
 def add_sensors(vehicle, cfg):
-    from xebikart_app.parts.lidar import RPLidar, BreezySLAM
-    from xebikart_app.parts.imu import Mpu6050
+    from xebikart.parts.lidar import RPLidar, BreezySLAM
+    from xebikart.parts.imu import Mpu6050
 
     is_imu_enabled_lb = Lambda(lambda: cfg.IMU_ENABLED)
     vehicle.add(

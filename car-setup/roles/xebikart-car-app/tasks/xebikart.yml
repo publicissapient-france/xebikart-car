@@ -1,0 +1,31 @@
+---
+
+- name: "create python package directory"
+  file:
+    path: "{{ user_directory }}/python-package"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+    state: "directory"
+
+- name: "copy xebikart sources"
+  copy:
+    src: "{{ role_path }}/../../../xebikart"
+    dest: "{{ user_directory }}/python-package"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+
+- name: "copy xebikart setup.py"
+  copy:
+    src: "{{ role_path }}/../../../setup.py"
+    dest: "{{ user_directory }}/python-package"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+
+- name: "install xebikart package"
+  pip:
+    name: "file://{{ user_directory }}/python-package"
+    extra_args: "-e"
+    virtualenv: "{{ user_directory }}/env"
