@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "{will_be_replace}"
-  namespace: mlflow
+  namespace: apps-mlflow
 spec:
   ttlSecondsAfterFinished: 100
   backoffLimit: 0
@@ -48,4 +48,4 @@ spec:
         emptyDir: {}
       - name: "service-account"
         secret:
-          secretName: "mlflow-apps-sa-key"
+          secretName: "apps-sa-key"
