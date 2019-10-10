@@ -9,5 +9,10 @@ setup(
         'requests==2.22.0',
         'tensorflow==1.14.0',
         'donkeycar'
-    ]
+    ],
+    extras_require={
+        'rl': [
+            'gym==0.12.5',
+        ]
+    }
 )
