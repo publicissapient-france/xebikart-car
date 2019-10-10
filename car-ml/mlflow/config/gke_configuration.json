@@ -1,5 +1,5 @@
 {
     "kube-context": "gke_xebikart-dev-1_europe-west1_xebikart-gke-dev-1",
-    "kube-job-template-path": "mlflow/config/gke_job_template.yaml",
+    "kube-job-template-path": "mlflow/k8s-manifests/job_template.yaml",
     "repository-uri": "eu.gcr.io/xebikart-dev-1/xebikart_ml"
 }
