@@ -39,8 +39,8 @@ RUN pip3 install -r requirements.txt
 ENV MLFLOW_TRACKING_URI file:/workspace/mlruns
 
 # Install xebikart package
-COPY setup.py /code/
-COPY xebikart /code/xebikart
+COPY car-package/setup.py /code/
+COPY car-package/xebikart /code/xebikart
 RUN pip3 install /code/
 
 ENTRYPOINT ["/usr/bin/tini", "--"]

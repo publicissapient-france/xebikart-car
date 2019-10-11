@@ -2,7 +2,7 @@
 
 - name: "create python package directory"
   file:
-    path: "{{ user_directory }}/python-package"
+    path: "{{ user_directory }}/car-package"
     group: "{{ group }}"
     owner: "{{ user }}"
     mode: "0700"
@@ -10,22 +10,22 @@
 
 - name: "copy xebikart sources"
   copy:
-    src: "{{ role_path }}/../../../xebikart"
-    dest: "{{ user_directory }}/python-package"
+    src: "{{ role_path }}/../../../car-package/xebikart"
+    dest: "{{ user_directory }}/car-package"
     group: "{{ group }}"
     owner: "{{ user }}"
     mode: "0700"
 
 - name: "copy xebikart setup.py"
   copy:
-    src: "{{ role_path }}/../../../setup.py"
-    dest: "{{ user_directory }}/python-package"
+    src: "{{ role_path }}/../../../car-package/setup.py"
+    dest: "{{ user_directory }}/car-package"
     group: "{{ group }}"
     owner: "{{ user }}"
     mode: "0700"
 
 - name: "install xebikart package"
   pip:
-    name: "file://{{ user_directory }}/python-package"
+    name: "file://{{ user_directory }}/car-package"
     extra_args: "-e"
     virtualenv: "{{ user_directory }}/env"
