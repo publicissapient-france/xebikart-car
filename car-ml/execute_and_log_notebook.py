@@ -12,7 +12,7 @@ parser.add_argument('--output', dest='notebook_output', required=True,
 
 args, raw_parameters = parser.parse_known_args()
 
-parameters = {k: v for k, v in zip(raw_parameters[::2], raw_parameters[1::2])}
+parameters = {k[2:]: v for k, v in zip(raw_parameters[::2], raw_parameters[1::2])}
 
 print("input", args.notebook_input)
 print("output", args.notebook_output)
