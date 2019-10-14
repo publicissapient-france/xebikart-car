@@ -2,12 +2,13 @@
 
 """
 Usage:
-    steeringpilot.py --model=<model_path> [--throttle=<throttle>]
+    keynote.py --steering-model=<steering_model_path> --exit-mode=<exit_model_path> [--throttle=<throttle>]
 
 Options:
-    -h --help               Show this screen.
-    --model=<path>          Path to h5 model (steering only) (.h5)
-    --throttle=<throttle>   Fix throttle [default: 0.2]
+    -h --help                    Show this screen.
+    --steering-model=<path>      Path to h5 model (steering only) (.h5)
+    --throttle=<throttle>        Fix throttle [default: 0.2]
+    --exit-model=<path>          Path to h5 model (steering only) (.h5)
 """
 
 import logging
@@ -44,12 +45,12 @@ def drive(cfg, args):
     vehicle.add(joystick, outputs=['js/steering', 'js/throttle', 'js/actions'], threaded=True)
 
     # Steering model
-    steering_model_path = args["--model"]
+    steering_model_path = args["--steering-model"]
     throttle = args["--throttle"]
     add_steering_model(vehicle, steering_model_path, throttle, 'cam/image_array', 'ai/steering', 'ai/throttle')
 
     # Exit model
-    exit_model_path = args["--exit"]
+    exit_model_path = args["--exit-model"]
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
     # Keynote driver
