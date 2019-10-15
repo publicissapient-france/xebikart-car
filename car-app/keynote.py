@@ -8,7 +8,8 @@ Options:
     -h --help                    Show this screen.
     --steering-model=<path>      Path to h5 model (steering only) (.h5)
     --throttle=<throttle>        Fix throttle [default: 0.2]
-    --exit-model=<path>          Path to h5 model (steering only) (.h5)
+    --exit-model=<path>          Path to h5 model (exit) (.h5)
+    --detect-model=<path>        Path to h5 model (exit) (.h5)
 """
 
 import logging
@@ -53,10 +54,14 @@ def drive(cfg, args):
     exit_model_path = args["--exit-model"]
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
+    # Exit model
+    detect_model_path = args["--detect-model"]
+    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
+
     # TODO: find a better way to map ai outputs and driver actions
     # AI actions for emergency stop
-    ai_actions_lb = Lambda(lambda x: [KeynoteDriver.EMERGENCY_STOP] if x else [])
-    vehicle.add(ai_actions_lb, inputs=['exit/should_stop'], outputs=['ai/actions'])
+    ai_actions_lb = Lambda(lambda x, y: [KeynoteDriver.EMERGENCY_STOP] if x or y else [])
+    vehicle.add(ai_actions_lb, inputs=['exit/should_stop', 'detect/should_stop'], outputs=['ai/actions'])
 
     # Keynote driver
     driver = KeynoteDriver(
@@ -78,7 +83,7 @@ def drive(cfg, args):
     )
 
 
-def add_exit_model(vehicle, exit_model_path, camera_input, is_outside_output):
+def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
         image_transformer.generate_crop_fn(0, 80, 160, 40),
@@ -86,15 +91,34 @@ def add_exit_model(vehicle, exit_model_path, camera_input, is_outside_output):
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    detection_model = OneOutputModel()
-    detection_model.load(exit_model_path)
-    vehicle.add(detection_model, inputs=['exit/_image'], outputs=['exit/_predict'])
+    exit_model = OneOutputModel()
+    exit_model.load(exit_model_path)
+    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_predict'])
     # Sum n last predictions
     buffer = Sum(buffer_size=10)
     vehicle.add(buffer, inputs=['exit/_predict'], outputs=['exit/_sum'])
     # If sum is higher than
     higher_than = HigherThan(threshold=5)
-    vehicle.add(higher_than, inputs=['exit/_sum'], outputs=[is_outside_output])
+    vehicle.add(higher_than, inputs=['exit/_sum'], outputs=[should_stop_output])
+
+
+def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_output):
+    image_transformation = ImageTransformation([
+        image_transformer.normalize,
+        image_transformer.generate_crop_fn(0, 80, 160, 40),
+        tf.image.rgb_to_grayscale
+    ])
+    vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
+    # Predict on transformed image
+    detection_model = OneOutputModel()
+    detection_model.load(detect_model_path)
+    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_predict'])
+    # Sum n last predictions
+    buffer = Sum(buffer_size=10)
+    vehicle.add(buffer, inputs=['detect/_predict'], outputs=['detect/_sum'])
+    # If sum is higher than
+    higher_than = HigherThan(threshold=5)
+    vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_stop_output])
 
 
 def add_steering_model(vehicle, steering_path, fix_throttle, camera_input, ai_steering_output, ai_throttle_output):
