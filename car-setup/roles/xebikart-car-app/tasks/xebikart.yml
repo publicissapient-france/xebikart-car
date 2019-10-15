@@ -1,6 +1,6 @@
 ---
 
-- name: "create python package directory"
+- name: "create car package directory"
   file:
     path: "{{ user_directory }}/car-package"
     group: "{{ group }}"
@@ -8,17 +8,9 @@
     mode: "0700"
     state: "directory"
 
-- name: "copy xebikart sources"
+- name: "copy car package sources"
   copy:
-    src: "{{ role_path }}/../../../car-package/xebikart"
-    dest: "{{ user_directory }}/car-package"
-    group: "{{ group }}"
-    owner: "{{ user }}"
-    mode: "0700"
-
-- name: "copy xebikart setup.py"
-  copy:
-    src: "{{ role_path }}/../../../car-package/setup.py"
+    src: "{{ role_path }}/../../../car-package/" # ending slash only copies content inside directory, not directory itself
     dest: "{{ user_directory }}/car-package"
     group: "{{ group }}"
     owner: "{{ user }}"
