@@ -2,9 +2,6 @@ import config
 
 import numpy as np
 
-# TODO: find a way to not use it
-from xebikart.parts.joystick import KeynoteJoystick
-
 
 class Driver:
 
@@ -47,6 +44,9 @@ class KeynoteDriver:
     ES_THROTTLE_POS_ONE = 3
     ES_THROTTLE_NEG_TWO = 4
 
+    EMERGENCY_STOP = "emergency_stop"
+    MODE_TOGGLE = "mode_toggle"
+
     def __init__(self, throttle_scale):
         self.default_modes = [KeynoteDriver.MODE_USER, KeynoteDriver.MODE_AI_STEERING, KeynoteDriver.MODE_AI]
         self.modes = self.default_modes
@@ -55,8 +55,8 @@ class KeynoteDriver:
         self.es_current_sequence = self.es_sequence
         # Bind actions to functions
         self.actions_fn = {
-            KeynoteJoystick.EMERGENCY_STOP: self.initiate_emergency_stop,
-            KeynoteJoystick.MODE_TOGGLE: self.roll_mode
+            KeynoteDriver.EMERGENCY_STOP: self.initiate_emergency_stop,
+            KeynoteDriver.MODE_TOGGLE: self.roll_mode
         }
         # TODO: find a way to remove it
         self.throttle_scale = throttle_scale
@@ -82,6 +82,7 @@ class KeynoteDriver:
             return 0., 0.
 
     def initiate_emergency_stop(self):
+        self.reset_mode()
         self.es_current_sequence = self.es_sequence
 
     def is_in_emergency_loop(self):
@@ -110,9 +111,10 @@ class KeynoteDriver:
             else:
                 print("WARN: {} action does not exist.".format(action))
 
-    def run(self, user_steering, user_throttle, ai_steering, ai_throttle, user_actions):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, ai_throttle, ai_actions):
         if self.is_in_emergency_loop():
             return 0., self.roll_emergency_stop()
         else:
             self.do_actions(user_actions)
+            self.do_actions(ai_actions)
             return self.mode_steering_throttle(user_steering, user_throttle, ai_steering, ai_throttle)

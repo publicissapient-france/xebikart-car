@@ -53,12 +53,17 @@ def drive(cfg, args):
     exit_model_path = args["--exit-model"]
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
+    # TODO: find a better way to map ai outputs and driver actions
+    # AI actions for emergency stop
+    ai_actions_lb = Lambda(lambda x: [KeynoteDriver.EMERGENCY_STOP] if x else [])
+    vehicle.add(ai_actions_lb, inputs=['exit/should_stop'], outputs=['ai/actions'])
+
     # Keynote driver
     driver = KeynoteDriver(
         throttle_scale=cfg.JOYSTICK_MAX_THROTTLE
     )
     vehicle.add(driver,
-                inputs=['js/steering', 'js/throttle', 'ai/steering', 'ai/throttle', 'js/actions'],
+                inputs=['js/steering', 'js/throttle', 'js/actions', 'ai/steering', 'ai/throttle', 'ai/actions'],
                 outputs=['pilot/steering', 'pilot/throttle'])
 
     add_steering(vehicle, cfg, 'pilot/steering')
