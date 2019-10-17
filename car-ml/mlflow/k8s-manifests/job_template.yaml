@@ -11,6 +11,10 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
     spec:
+      tolerations:
+      - key: "dedicated"
+        operator: Equal
+        value: "ml"
       initContainers:
       - name: create-tubes-directory
         image: 'alpine:3.7'
@@ -40,8 +44,8 @@ spec:
           mountPath: "/var/run/secret/cloud.google.com"
         resources:
           requests:
-            cpu: 300m
-            memory: 1500Mi
+            cpu: 3000m
+            memory: 8000Mi
       restartPolicy: Never
       volumes:
       - name: workspace
