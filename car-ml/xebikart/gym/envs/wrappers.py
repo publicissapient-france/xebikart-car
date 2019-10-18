@@ -1,6 +1,6 @@
 import numpy as np
 
-from gym.core import Wrapper, ObservationWrapper
+from gym.core import Wrapper, ObservationWrapper, ActionWrapper
 from gym.spaces import Box
 
 import xebikart.images.transformer as images_transformer
@@ -162,3 +162,28 @@ class HistoryBasedWrapper(Wrapper):
         command_history_reshaped = np.reshape(self.command_history, (1, self.n_commands * self.n_command_history))
         command_history_reshaped = np.concatenate((observation, command_history_reshaped), axis=-1)
         return np.squeeze(command_history_reshaped)
+
+
+class ClipSteeringBasedOnPrevious(ActionWrapper):
+    def __init__(self, env, max_steering_diff):
+        """
+        Clip steering based on previous one and max_steering_diff
+
+        :param env:
+        :param max_steering_diff:
+        """
+        super(ClipSteeringBasedOnPrevious, self).__init__(env)
+
+        # Max steering diff
+        self.max_steering_diff = max_steering_diff
+        self.previous_steering = 0
+
+    def action(self, action):
+        diff = np.clip(action[0] - self.previous_steering, -self.max_steering_diff, self.max_steering_diff)
+        action[0] = self.previous_steering + diff
+        self.previous_steering = action[0]
+        return action
+
+    def reverse_action(self, action):
+        raise NotImplementedError
+
