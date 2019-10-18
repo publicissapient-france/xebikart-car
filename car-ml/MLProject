@@ -10,6 +10,8 @@ entry_points:
         command: "python execute_and_log_notebook.py --input workspace/auto_encoder/variational_auto_encoder.ipynb --output output_variational_auto_encoder.ipynb"
     reinforcement_learning:
         command: "python execute_and_log_notebook.py --start-xvfb --input workspace/reinforcement_learning/soft_actor_critic.ipynb --output output_soft_actor_critic.ipynb"
+    rl_sac_steering:
+        command: "python execute_and_log_notebook.py --start-xvfb --input workspace/reinforcement_learning/sac_steering_spaces_only.ipynb --output output_sac_steering_spaces_only.ipynb"
     cnn:
         command: "python execute_and_log_notebook.py --input workspace/supervised_models/CNN.ipynb --output output_cnn.ipynb"
 
