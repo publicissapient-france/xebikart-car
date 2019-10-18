@@ -15,11 +15,9 @@ from docopt import docopt
 
 import donkeycar as dk
 
-from xebikart_app import add_controller, \
-    add_throttle, add_steering, add_pi_camera, add_pilot, add_logger
-
-from xebikart_app.parts.rl import MemorySoftActorCriticModel
-from xebikart_app.parts.image import TFSessImageTransformation, ImageTransformation
+from xebikart.parts import add_controller, add_throttle, add_steering, add_pi_camera, add_pilot, add_logger
+from xebikart.parts.rl import MemorySoftActorCriticModel
+from xebikart.parts.image import TFSessImageTransformation, ImageTransformation
 
 import xebikart.images.transformer as image_transformer
 

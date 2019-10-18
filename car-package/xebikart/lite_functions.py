@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.compat.v1 import lite
 
 
 def interpreter_and_details(model_path) :
@@ -14,7 +13,7 @@ def interpreter_and_details(model_path) :
     """
 
     # Load TFLite model and allocate tensors
-    interpreter = lite.Interpreter(model_path=model_path)
+    interpreter = tf.compat.v1.lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
 
     # Get input and output tensors

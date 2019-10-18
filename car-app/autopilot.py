@@ -15,11 +15,9 @@ from docopt import docopt
 
 import donkeycar as dk
 
-from xebikart_app import add_controller, add_logger, \
-    add_throttle, add_steering, add_pi_camera, add_pilot
-
-from xebikart_app.parts.keras import PilotModel
-from xebikart_app.parts.image import ImageTransformation
+from xebikart.parts import add_controller, add_logger, add_throttle, add_steering, add_pi_camera, add_pilot
+from xebikart.parts.keras import PilotModel
+from xebikart.parts.image import ImageTransformation
 
 import xebikart.images.transformer as image_transformer
 

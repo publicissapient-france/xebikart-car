@@ -21,10 +21,10 @@ from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
-from xebikart_app.parts.driver import Driver
-from xebikart_app.parts.lidar import RPLidar, BreezySLAM
-from xebikart_app.parts.imu import Mpu6050
-from xebikart_app.parts.mqtt import MQTTClient
+from xebikart.parts.driver import Driver
+from xebikart.parts.lidar import RPLidar, BreezySLAM
+from xebikart.parts.imu import Mpu6050
+from xebikart.parts.mqtt import MQTTClient
 
 
 def drive(cfg, model_path=None):

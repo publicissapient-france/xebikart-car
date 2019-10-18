@@ -1,0 +1,23 @@
+---
+
+- name: "create car package directory"
+  file:
+    path: "{{ user_directory }}/car-package"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+    state: "directory"
+
+- name: "copy car package sources"
+  copy:
+    src: "{{ role_path }}/../../../car-package/" # ending slash only copies content inside directory, not directory itself
+    dest: "{{ user_directory }}/car-package"
+    group: "{{ group }}"
+    owner: "{{ user }}"
+    mode: "0700"
+
+- name: "install xebikart package"
+  pip:
+    name: "file://{{ user_directory }}/car-package"
+    extra_args: "-e"
+    virtualenv: "{{ user_directory }}/env"

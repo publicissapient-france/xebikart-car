@@ -14,13 +14,11 @@ from docopt import docopt
 
 import donkeycar as dk
 
-from xebikart_app import add_controller, \
-    add_throttle, add_steering, add_pi_camera, add_logger, add_pilot_emergency_exit
-from xebikart_app.parts.image import ImageTransformation
-
-from xebikart_app.parts.keras import OneOutputModel
-from xebikart_app.parts.buffers import Sum
-from xebikart_app.parts.condition import HigherThan
+from xebikart.parts import add_controller, add_throttle, add_steering, add_pi_camera, add_logger, add_pilot_emergency_exit
+from xebikart.parts.image import ImageTransformation
+from xebikart.parts.keras import OneOutputModel
+from xebikart.parts.buffers import Sum
+from xebikart.parts.condition import HigherThan
 
 import xebikart.images.transformer as image_transformer
 

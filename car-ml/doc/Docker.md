@@ -1,30 +1,20 @@
 # Download simulator
 
-Go to : https://github.com/xebia-france/xebikart-unity/releases/download/v0.1/DonkeySimLinux.zip
+Go to : https://github.com/xebia-france/xebikart-unity/releases/download/v0.2/DonkeySimLinux.zip
 
 And put in `car-ml/simulators/`
 
 # Build docker image
 
-	docker build -t xebikart_ml .
+	docker build -t xebikart_ml . -f car-ml/Dockerfile
 
 # Start docker image with your workspace
 
-	docker run -d -v $(pwd)/workspace:/workspace -v $(pwd)/../xebikart-ml-tubes:/workspace/xebikart-ml-tubes -p 8888:8888 -p 5000:5000 xebikart_ml
+	cd car-ml && ./start-docker.sh
 
 Then open your browser on http://localhost:8888/
 
-# Jupyter Tensorboard extension
-
-A JupyterLab extension for tensorboard.
-
-> Note: This project is just a frontend extension for tensorboard on jupyterlab. It uses the [jupyter_tensorboard](https://github.com/lspvic/jupyter_tensorboard) project as tensorboard backend.
-
-<img src="images/tensorboard-overview.png" />
-
 ## Special Thanks
-
-Thanks [lspvic](https://github.com/lspvic) and his excellent work for creating [tensorboard](https://github.com/lspvic/jupyter_tensorboard) for jupyter notebooks.
 
 # Credits
 - https://github.com/tawnkramer/donkey_gym
