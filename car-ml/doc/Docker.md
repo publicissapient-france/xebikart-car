@@ -6,11 +6,11 @@ And put in `car-ml/simulators/`
 
 # Build docker image
 
-	docker build -t xebikart_ml .
+	docker build -t xebikart_ml . -f car-ml/Dockerfile
 
 # Start docker image with your workspace
 
-	docker run -d -v $(pwd)/workspace:/workspace -v $(pwd)/../xebikart-ml-tubes:/workspace/xebikart-ml-tubes -p 8888:8888 -p 5000:5000 xebikart_ml
+	cd car-ml && ./start-docker.sh
 
 Then open your browser on http://localhost:8888/
 
