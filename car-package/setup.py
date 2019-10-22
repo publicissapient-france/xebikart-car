@@ -13,6 +13,7 @@ setup(
     extras_require={
         'rl': [
             'gym==0.12.5',
+            'rl_coach'
         ]
     }
 )
