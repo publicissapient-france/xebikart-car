@@ -123,7 +123,7 @@ class HistoryBasedWrapper(Wrapper):
         self.n_commands = self.env.action_space.shape[0]
         self.n_command_history = n_command_history
         # shape (1, x) to keep same as observation
-        self.command_history = np.zeros((self.n_commands * self.n_command_history))
+        self.command_history = np.zeros(self.n_commands * self.n_command_history)
 
         # Max steering diff
         self.max_steering_diff = max_steering_diff
@@ -135,7 +135,7 @@ class HistoryBasedWrapper(Wrapper):
                                      dtype=self.env.observation_space.dtype)
 
     def reset(self, **kwargs):
-        self.command_history = np.zeros((self.n_commands * self.n_command_history))
+        self.command_history = np.zeros(self.n_commands * self.n_command_history)
         observation = self.env.reset(**kwargs)
         return self.observation(observation)
 
@@ -159,8 +159,7 @@ class HistoryBasedWrapper(Wrapper):
         return action
 
     def observation(self, observation):
-        command_history_reshaped = np.reshape(self.command_history, (1, self.n_commands * self.n_command_history))
-        command_history_reshaped = np.concatenate((observation, command_history_reshaped), axis=-1)
+        command_history_reshaped = np.concatenate((observation, self.command_history), axis=-1)
         return np.squeeze(command_history_reshaped)
 
 
