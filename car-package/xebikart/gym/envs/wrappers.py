@@ -93,13 +93,13 @@ class ConvVariationalAutoEncoderObservationWrapper(ObservationWrapper):
 
         self.observation_space = Box(low=np.finfo(np.float32).min,
                                      high=np.finfo(np.float32).max,
-                                     shape=(z_size, ),
+                                     shape=(z_size,),
                                      dtype=np.float32)
 
     def observation(self, observation):
         normalize_obs = observation / 255.
         normalize_obs = np.expand_dims(normalize_obs, 0)
-        return self.vae.predict(normalize_obs)
+        return np.squeeze(self.vae.predict(normalize_obs))
 
 
 class HistoryBasedWrapper(Wrapper):
@@ -183,6 +183,24 @@ class ClipSteeringBasedOnPrevious(ActionWrapper):
         action[0] = self.previous_steering + diff
         self.previous_steering = action[0]
         return action
+
+    def reverse_action(self, action):
+        raise NotImplementedError
+
+
+class FixThrottle(ActionWrapper):
+    def __init__(self, env):
+        """
+        Fix throttle to min_throttle
+
+        :param env:
+        """
+        super(FixThrottle, self).__init__(env)
+        # steering only
+        self.action_space = Box(low=-1, high=1, shape=(1,), dtype=np.float32)
+
+    def action(self, action):
+        return np.append(action, -1)
 
     def reverse_action(self, action):
         raise NotImplementedError
