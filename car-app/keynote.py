@@ -23,7 +23,7 @@ from xebikart.parts.keras import OneOutputModel
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import KeynoteJoystick
 from xebikart.parts.buffers import Sum
-from xebikart.parts.condition import HigherThan
+from xebikart.parts.condition import HigherThan, LessThan
 from xebikart.parts.driver import KeynoteDriver
 
 import xebikart.images.transformer as image_transformer
@@ -59,11 +59,11 @@ def drive(cfg, args):
     add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
 
     # Brightness
-    add_brightness_detector(vehicle, 'cam/image_array', 10, 'brightness/should_stop')
+    add_brightness_detector(vehicle, 'cam/image_array', 450000, 'brightness/should_stop')
 
     # TODO: find a better way to map ai outputs and driver actions
     # AI actions for emergency stop
-    ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or z else [])
+    ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or not z else [])
     vehicle.add(ai_actions_lb,
                 inputs=['exit/should_stop', 'detect/should_stop', 'brightness/should_stop'],
                 outputs=['ai/actions'])
@@ -152,7 +152,7 @@ def add_brightness_detector(vehicle, camera_input, threshold, threshold_output):
     buffer = Sum(buffer_size=10)
     vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=['brightness/_sum'])
     # If sum is higher than
-    higher_than = HigherThan(threshold=threshold * 10)
+    higher_than = LessThan(threshold=threshold * 10)
     vehicle.add(higher_than, inputs=['brightness/_sum'], outputs=[threshold_output])
 
 
