@@ -54,14 +54,19 @@ def drive(cfg, args):
     exit_model_path = args["--exit-model"]
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
-    # Exit model
+    # Detect model
     detect_model_path = args["--detect-model"]
     add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
 
+    # Brightness
+    add_brightness_detector(vehicle, 'cam/image_array', 10, 'brightness/should_stop')
+
     # TODO: find a better way to map ai outputs and driver actions
     # AI actions for emergency stop
-    ai_actions_lb = Lambda(lambda x, y: [KeynoteDriver.EMERGENCY_STOP] if x or y else [])
-    vehicle.add(ai_actions_lb, inputs=['exit/should_stop', 'detect/should_stop'], outputs=['ai/actions'])
+    ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or z else [])
+    vehicle.add(ai_actions_lb,
+                inputs=['exit/should_stop', 'detect/should_stop', 'brightness/should_stop'],
+                outputs=['ai/actions'])
 
     # Keynote driver
     driver = KeynoteDriver(
@@ -135,6 +140,20 @@ def add_steering_model(vehicle, steering_path, fix_throttle, camera_input, ai_st
     # Throttle is fixed
     fix_throttle_lb = Lambda(lambda: float(fix_throttle))
     vehicle.add(fix_throttle_lb, outputs=[ai_throttle_output])
+
+
+def add_brightness_detector(vehicle, camera_input, threshold, threshold_output):
+    image_transformation = ImageTransformation([
+        lambda x: tf.dtypes.cast(x, "uint32"),
+        tf.math.reduce_sum
+    ])
+    vehicle.add(image_transformation, inputs=[camera_input], outputs=['brightness/_reduce'])
+    # Sum n last predictions
+    buffer = Sum(buffer_size=10)
+    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=['brightness/_sum'])
+    # If sum is higher than
+    higher_than = HigherThan(threshold=threshold * 10)
+    vehicle.add(higher_than, inputs=['brightness/_sum'], outputs=[threshold_output])
 
 
 if __name__ == '__main__':
