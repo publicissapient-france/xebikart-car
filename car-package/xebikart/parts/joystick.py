@@ -10,7 +10,7 @@ class KeynoteJoystick(PS3JoystickController):
             KeynoteDriver.EMERGENCY_STOP: False,
             KeynoteDriver.MODE_TOGGLE: False
         }
-        self.actions = self.default_actions
+        self.reset_actions()
 
     def init_js(self):
         super(KeynoteJoystick, self).init_js()
@@ -22,6 +22,7 @@ class KeynoteJoystick(PS3JoystickController):
 
         self.button_down_trigger_map = {
             'cross': self.record_action(KeynoteDriver.EMERGENCY_STOP),
+            'square': self.record_action(KeynoteDriver.EXIT_SAFE_MODE),
             'select': self.record_action(KeynoteDriver.MODE_TOGGLE)
         }
 
@@ -32,9 +33,12 @@ class KeynoteJoystick(PS3JoystickController):
             self.actions[action] = True
         return _fn
 
+    def reset_actions(self):
+        self.actions = self.default_actions.copy()
+
     def run_threaded(self):
-        actions = [k for k, v in self.actions if v is True]
+        actions = [k for k, v in self.actions.items() if v is True]
         # reset actions
-        self.actions = self.default_actions
+        self.reset_actions()
 
         return self.angle, self.throttle, actions

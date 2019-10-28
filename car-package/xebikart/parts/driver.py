@@ -38,6 +38,7 @@ class KeynoteDriver:
     MODE_USER = "user"
     MODE_AI_STEERING = "ai_steering"
     MODE_AI = "ai"
+    MODE_SAFE = "safe"
 
     ES_START = 1
     ES_THROTTLE_NEG_ONE = 2
@@ -46,13 +47,14 @@ class KeynoteDriver:
 
     EMERGENCY_STOP = "emergency_stop"
     MODE_TOGGLE = "mode_toggle"
+    EXIT_SAFE_MODE = "exit_safe_mode"
 
     def __init__(self, throttle_scale):
         self.default_modes = [KeynoteDriver.MODE_USER, KeynoteDriver.MODE_AI_STEERING, KeynoteDriver.MODE_AI]
         self.modes = self.default_modes
         # Emergency stop sequences
         self.es_sequence = [self.ES_START, self.ES_THROTTLE_NEG_ONE, self.ES_THROTTLE_POS_ONE, self.ES_THROTTLE_NEG_TWO]
-        self.es_current_sequence = self.es_sequence
+        self.es_current_sequence = []
         # Bind actions to functions
         self.actions_fn = {
             KeynoteDriver.EMERGENCY_STOP: self.initiate_emergency_stop,
@@ -68,6 +70,12 @@ class KeynoteDriver:
     def reset_mode(self):
         self.modes = self.default_modes
 
+    def set_safe_mode(self):
+        self.modes = [self.MODE_SAFE]
+
+    def is_safe_mode(self):
+        return self.current_mode() == self.MODE_SAFE
+
     def current_mode(self):
         return self.modes[0]
 
@@ -82,8 +90,12 @@ class KeynoteDriver:
             return 0., 0.
 
     def initiate_emergency_stop(self):
-        self.reset_mode()
-        self.es_current_sequence = self.es_sequence
+        self.set_safe_mode()
+        self.es_current_sequence = self.es_sequence.copy()
+
+    def exit_safe_mode(self):
+        if self.is_safe_mode():
+            self.reset_mode()
 
     def is_in_emergency_loop(self):
         return len(self.es_current_sequence) > 0
@@ -114,6 +126,10 @@ class KeynoteDriver:
     def run(self, user_steering, user_throttle, user_actions, ai_steering, ai_throttle, ai_actions):
         if self.is_in_emergency_loop():
             return 0., self.roll_emergency_stop()
+        elif self.is_safe_mode():
+            if KeynoteDriver.EXIT_SAFE_MODE in user_actions:
+                self.reset_mode()
+            return user_steering, user_throttle
         else:
             self.do_actions(user_actions)
             self.do_actions(ai_actions)

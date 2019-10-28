@@ -2,7 +2,7 @@
 
 """
 Usage:
-    keynote.py --steering-model=<steering_model_path> --exit-mode=<exit_model_path> [--throttle=<throttle>]
+    keynote.py --steering-model=<steering_model_path> --exit-model=<exit_model_path> --detect-model=<detect_model_path> [--throttle=<throttle>]
 
 Options:
     -h --help                    Show this screen.
@@ -37,8 +37,10 @@ def drive(cfg, args):
     vehicle = dk.vehicle.Vehicle()
 
     # Connect pi camera
+    print("Loading pi camera...")
     add_pi_camera(vehicle, cfg, 'cam/image_array')
 
+    print("Loading joystick...")
     joystick = KeynoteJoystick(
         throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
         steering_scale=cfg.JOYSTICK_STEERING_SCALE
@@ -46,29 +48,34 @@ def drive(cfg, args):
     vehicle.add(joystick, outputs=['js/steering', 'js/throttle', 'js/actions'], threaded=True)
 
     # Steering model
+    print("Loading steering model...")
     steering_model_path = args["--steering-model"]
     throttle = args["--throttle"]
     add_steering_model(vehicle, steering_model_path, throttle, 'cam/image_array', 'ai/steering', 'ai/throttle')
 
     # Exit model
+    print("Loading exit model...")
     exit_model_path = args["--exit-model"]
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
     # Detect model
-    detect_model_path = args["--detect-model"]
-    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
+    #print("Loading detect model...")
+    #detect_model_path = args["--detect-model"]
+    #add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
 
     # Brightness
-    add_brightness_detector(vehicle, 'cam/image_array', 450000, 'brightness/should_stop')
+    print("Loading brightness detector...")
+    add_brightness_detector(vehicle, 'cam/image_array', 50000, 'brightness/should_stop')
 
     # TODO: find a better way to map ai outputs and driver actions
     # AI actions for emergency stop
-    ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or not z else [])
+    ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or z else [])
     vehicle.add(ai_actions_lb,
-                inputs=['exit/should_stop', 'detect/should_stop', 'brightness/should_stop'],
+                inputs=['exit/should_stop', 'exit/should_stop', 'brightness/should_stop'],
                 outputs=['ai/actions'])
 
     # Keynote driver
+    print("Loading keynote driver...")
     driver = KeynoteDriver(
         throttle_scale=cfg.JOYSTICK_MAX_THROTTLE
     )
@@ -79,9 +86,10 @@ def drive(cfg, args):
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
-    add_logger(vehicle, 'pilot/steering', 'pilot/steering')
-    add_logger(vehicle, 'pilot/throttle', 'pilot/throttle')
+    #add_logger(vehicle, 'pilot/steering', 'pilot/steering')
+    #add_logger(vehicle, 'pilot/throttle', 'pilot/throttle')
 
+    print("Starting vehicle...")
     vehicle.start(
         rate_hz=cfg.DRIVE_LOOP_HZ,
         max_loop_count=cfg.MAX_LOOPS
@@ -110,8 +118,8 @@ def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
 def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        image_transformer.generate_crop_fn(0, 80, 160, 40),
-        tf.image.rgb_to_grayscale
+        #image_transformer.generate_crop_fn(0, 40, 160, 80),
+        image_transformer.edges
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
     # Predict on transformed image
@@ -144,7 +152,7 @@ def add_steering_model(vehicle, steering_path, fix_throttle, camera_input, ai_st
 
 def add_brightness_detector(vehicle, camera_input, threshold, threshold_output):
     image_transformation = ImageTransformation([
-        lambda x: tf.dtypes.cast(x, "uint32"),
+        lambda x: tf.dtypes.cast(x, "int32"),
         tf.math.reduce_sum
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['brightness/_reduce'])
