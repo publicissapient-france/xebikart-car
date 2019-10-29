@@ -139,3 +139,6 @@ class DonkeyEnv(gym.Env):
             self.unity_process.quit()
         self.viewer.close_connection()
         self.viewer.quit()
+
+    def get_keys_to_action(self):
+        return {}
