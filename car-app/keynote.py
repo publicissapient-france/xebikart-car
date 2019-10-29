@@ -59,9 +59,9 @@ def drive(cfg, args):
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
     # Detect model
-    #print("Loading detect model...")
-    #detect_model_path = args["--detect-model"]
-    #add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
+    print("Loading detect model...")
+    detect_model_path = args["--detect-model"]
+    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
 
     # Brightness
     print("Loading brightness detector...")
