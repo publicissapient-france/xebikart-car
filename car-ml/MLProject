@@ -6,5 +6,3 @@ docker_env:
 entry_points:
     main:
         command: "python execute_and_log_notebook.py"
-    with_xvfb:
-        command: "python execute_and_log_notebook.py --start-xvfb"

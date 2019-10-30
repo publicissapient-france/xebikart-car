@@ -19,10 +19,6 @@ case $key in
     shift # past argument
     shift # past value
     ;;
-    --start-xvfb)
-    START_XVFB="true"
-    shift # past argument
-    ;;
     *)    # unknown option
     ARGS+=("${1:2}=$2") # save it in an array for later
     shift # past argument
@@ -47,15 +43,7 @@ if [[ $? -ne 0 ]]; then
 fi
 
 
-COMMAND="mlflow run ."
-
-# Start xvfb if needed
-if [[ ! -z "$START_XVFB" ]]; then
-    COMMAND="$COMMAND -e with_xvfb"
-else
-    COMMAND="$COMMAND -e main"
-fi
-
+COMMAND="mlflow run . -e main"
 COMMAND="$COMMAND -b kubernetes --backend-config mlflow/config/gke_configuration.json --experiment-name $EXPERIMENT"
 
 # Add notebook path

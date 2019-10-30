@@ -1,3 +1,6 @@
+import os
+import subprocess
+
 import argparse
 
 import mlflow
@@ -9,7 +12,6 @@ parser.add_argument('--input', dest='notebook_input', required=True,
                     help='path to notebook')
 parser.add_argument('--output', dest='notebook_output', required=True,
                     help='path to output notebook')
-parser.add_argument('--start-xvfb', action="store_true", dest='start_xvfb', default=False)
 
 args, raw_parameters = parser.parse_known_args()
 
@@ -32,12 +34,9 @@ print("input", args.notebook_input)
 print("output", args.notebook_output)
 print("parameters", parameters)
 
-if args.start_xvfb:
-    import subprocess
-    import os
 
-    print("Start xvfb :1 screen 0")
-    subprocess.Popen('/usr/bin/Xvfb :1 -screen 0 600x400x24', shell=True, preexec_fn=os.setsid)
+print("Start xvfb :1 screen 0")
+subprocess.Popen('/usr/bin/Xvfb :1 -screen 0 600x400x24', shell=True, preexec_fn=os.setsid)
 
 pm.execute_notebook(
    args.notebook_input,
