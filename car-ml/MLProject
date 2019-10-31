@@ -14,6 +14,8 @@ entry_points:
         command: "python execute_and_log_notebook.py --start-xvfb --input workspace/reinforcement_learning/sac_steering_spaces_only.ipynb --output output_sac_steering_spaces_only.ipynb"
     rl_reward_cte:
         command: "python execute_and_log_notebook.py --start-xvfb --input workspace/reinforcement_learning/sac_reward_cte.ipynb --output output_sac_reward_cte.ipynb"
+    rl_reward_cte_on_track:
+        command: "python execute_and_log_notebook.py --start-xvfb --input workspace/reinforcement_learning/sac_reward_cte_on_track.ipynb --output output_sac_reward_cte_on_track.ipynb"
     cnn:
         command: "python execute_and_log_notebook.py --input workspace/supervised_models/CNN.ipynb --output output_cnn.ipynb"
 
