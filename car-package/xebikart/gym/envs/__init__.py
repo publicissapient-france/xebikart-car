@@ -63,7 +63,7 @@ def create_stack_obs_clipping_steering(vae, level=4, frame_skip=2, max_cte_error
     return clip_action
 
 
-def create_fix_throttle_env(vae, level=4, frame_skip=2, max_cte_error=3.0,
+def create_fix_throttle_env(vae=None, level=4, frame_skip=2, max_cte_error=3.0,
                             min_steering=-1, max_steering=1, throttle=0.2,
                             headless=True, reward_fn=None):
 
@@ -83,9 +83,10 @@ def create_fix_throttle_env(vae, level=4, frame_skip=2, max_cte_error=3.0,
     crop_obs = CropObservationWrapper(donkey_env, 0, 40, 160, 80)
     # Edging
     edging_obs = EdgingObservationWrapper(crop_obs)
-    # VAE
-    vae_obs = ConvVariationalAutoEncoderObservationWrapper(edging_obs, vae)
-    # Fix throttle
-    fix_throttle = FixThrottle(vae_obs)
-
-    return fix_throttle
+    if vae is not None:
+        # VAE
+        vae_obs = ConvVariationalAutoEncoderObservationWrapper(edging_obs, vae)
+        # Fix throttle
+        return FixThrottle(vae_obs)
+    else:
+        return FixThrottle(edging_obs)
