@@ -8,8 +8,8 @@ Options:
     -h --help                    Show this screen.
     --steering-model=<path>      Path to h5 model (steering only) (.h5)
     --throttle=<throttle>        Fix throttle [default: 0.2]
-    --exit-model=<path>          Path to h5 model (exit) (.h5)
-    --detect-model=<path>        Path to h5 model (exit) (.h5)
+    --exit-model=<path>          Path to tflite model (exit) (.tflite)
+    --detect-model=<path>        Path to tflite model (detect) (.tflite)
 """
 
 import logging
@@ -20,6 +20,7 @@ from donkeycar.parts.transform import Lambda
 
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
 from xebikart.parts.keras import OneOutputModel
+from xebikart.parts.tflite import AsyncTFLiteModel
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import KeynoteJoystick
 from xebikart.parts.buffers import Sum
@@ -71,7 +72,7 @@ def drive(cfg, args):
     # AI actions for emergency stop
     ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or z else [])
     vehicle.add(ai_actions_lb,
-                inputs=['exit/should_stop', 'exit/should_stop', 'brightness/should_stop'],
+                inputs=['exit/should_stop', 'detect/should_stop', 'brightness/should_stop'],
                 outputs=['ai/actions'])
 
     # Keynote driver
@@ -104,9 +105,8 @@ def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    exit_model = OneOutputModel()
-    exit_model.load(exit_model_path)
-    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_predict'])
+    exit_model = AsyncTFLiteModel(exit_model_path, rate_hz=1.)
+    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_predict'], threaded=True)
     # Sum n last predictions
     buffer = Sum(buffer_size=10)
     vehicle.add(buffer, inputs=['exit/_predict'], outputs=['exit/_sum'])
@@ -118,14 +118,12 @@ def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
 def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        #image_transformer.generate_crop_fn(0, 40, 160, 80),
         image_transformer.edges
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
     # Predict on transformed image
-    detection_model = OneOutputModel()
-    detection_model.load(detect_model_path)
-    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_predict'])
+    detection_model = AsyncTFLiteModel(detect_model_path, rate_hz=1.)
+    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_predict'], threaded=True)
     # Sum n last predictions
     buffer = Sum(buffer_size=10)
     vehicle.add(buffer, inputs=['detect/_predict'], outputs=['detect/_sum'])
