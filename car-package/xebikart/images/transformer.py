@@ -115,5 +115,5 @@ def detect_exit_road_preprocess(tf_image):
     return tf_image
 
 
-def detect_obstacle_rpeprocess(tf_image):
+def detect_obstacle_preprocess(tf_image):
     return normalize_gray_scale(tf_image)
