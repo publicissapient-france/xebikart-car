@@ -45,9 +45,16 @@ class KeynoteDriver:
     ES_THROTTLE_POS_ONE = 3
     ES_THROTTLE_NEG_TWO = 4
 
+    OT_GO_LEFT_TRACK = 1
+    OT_RESETTLEMENT_LEFT_TRACK = 2
+    OT_STRAIGHT = 3
+    OT_GO_RIGHT_TRACK = 4
+    OT_RESETTLEMENT_RIGHT_TRACK = 5
+
     EMERGENCY_STOP = "emergency_stop"
     MODE_TOGGLE = "mode_toggle"
     EXIT_SAFE_MODE = "exit_safe_mode"
+    OVERTAKE = "overtake"
 
     def __init__(self, throttle_scale):
         self.default_modes = [KeynoteDriver.MODE_USER, KeynoteDriver.MODE_AI_STEERING, KeynoteDriver.MODE_AI]
@@ -55,10 +62,19 @@ class KeynoteDriver:
         # Emergency stop sequences
         self.es_sequence = [self.ES_START, self.ES_THROTTLE_NEG_ONE, self.ES_THROTTLE_POS_ONE, self.ES_THROTTLE_NEG_TWO]
         self.es_current_sequence = []
+        self.ot_sequence = [self.OT_GO_LEFT_TRACK, self.OT_GO_LEFT_TRACK, self.OT_GO_LEFT_TRACK,
+                            self.OT_RESETTLEMENT_LEFT_TRACK, self.OT_RESETTLEMENT_LEFT_TRACK,
+                            self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT,
+                            self.OT_GO_RIGHT_TRACK, self.OT_GO_RIGHT_TRACK, self.OT_GO_RIGHT_TRACK,
+                            self.OT_RESETTLEMENT_LEFT_TRACK, self.OT_RESETTLEMENT_LEFT_TRACK,
+                            self.OT_STRAIGHT]
+        self.ot_current_sequence = []
+
         # Bind actions to functions
         self.actions_fn = {
             KeynoteDriver.EMERGENCY_STOP: self.initiate_emergency_stop,
-            KeynoteDriver.MODE_TOGGLE: self.roll_mode
+            KeynoteDriver.MODE_TOGGLE: self.roll_mode,
+            KeynoteDriver.OVERTAKE: self.initiate_overtake,
         }
         # TODO: find a way to remove it
         self.throttle_scale = throttle_scale
@@ -93,12 +109,18 @@ class KeynoteDriver:
         self.set_safe_mode()
         self.es_current_sequence = self.es_sequence.copy()
 
+    def initiate_overtake(self):
+        self.ot_current_sequence = self.ot_sequence.copy()
+
     def exit_safe_mode(self):
         if self.is_safe_mode():
             self.reset_mode()
 
     def is_in_emergency_loop(self):
         return len(self.es_current_sequence) > 0
+
+    def is_in_overtake_loop(self):
+        return len(self.ot_current_sequence) > 0
 
     def roll_emergency_stop(self):
         # TODO: change it !
@@ -116,6 +138,20 @@ class KeynoteDriver:
                 self.throttle = 0.0
             return self.throttle
 
+    def roll_overtake(self):
+        # TODO: change it !
+        current_state = self.ot_current_sequence.pop(0)
+        if current_state == self.OT_GO_LEFT_TRACK:
+            return -1.0, self.throttle
+        elif current_state == self.OT_RESETTLEMENT_LEFT_TRACK:
+            return 0.5, self.throttle
+        elif current_state == self.OT_STRAIGHT:
+            return 0, self.throttle
+        elif current_state == self.OT_GO_RIGHT_TRACK:
+            return 1.0, self.throttle
+        elif current_state == self.OT_RESETTLEMENT_RIGHT_TRACK:
+            return -0.5, self.throttle
+
     def do_actions(self, actions):
         for action in actions:
             if action in self.actions_fn:
@@ -126,6 +162,8 @@ class KeynoteDriver:
     def run(self, user_steering, user_throttle, user_actions, ai_steering, ai_throttle, ai_actions):
         if self.is_in_emergency_loop():
             return 0., self.roll_emergency_stop()
+        elif self.is_in_overtake_loop():
+            return self.roll_overtake()
         elif self.is_safe_mode():
             if KeynoteDriver.EXIT_SAFE_MODE in user_actions:
                 self.reset_mode()

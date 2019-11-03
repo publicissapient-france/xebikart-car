@@ -57,7 +57,7 @@ def drive(cfg, args):
     # Detect model
     print("Loading detect model...")
     detect_model_path = args["--detect-model"]
-    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
+    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/overtake')
 
     # Exit model
     print("Loading exit model...")
@@ -70,9 +70,16 @@ def drive(cfg, args):
 
     # TODO: find a better way to map ai outputs and driver actions
     # AI actions for emergency stop
-    ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or z else [])
+    ai_actions_lb = Lambda(lambda x, y: [KeynoteDriver.EMERGENCY_STOP] if x or y else [])
     vehicle.add(ai_actions_lb,
-                inputs=['exit/should_stop', 'detect/should_stop', 'brightness/should_stop'],
+                inputs=['exit/should_stop', 'brightness/should_stop'],
+                outputs=['ai/actions'])
+
+    # TODO: find a better way to map ai outputs and driver actions
+    # actions for overtake
+    ai_actions_ot = Lambda(lambda z: [KeynoteDriver.OVERTAKE] if z else [])
+    vehicle.add(ai_actions_ot,
+                inputs=['detect/overtake'],
                 outputs=['ai/actions'])
 
     # Keynote driver
@@ -115,7 +122,7 @@ def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     vehicle.add(higher_than, inputs=['exit/_sum'], outputs=[should_stop_output])
 
 
-def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_output):
+def add_detect_model(vehicle, detect_model_path, camera_input, should_do_action):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
         tf.image.rgb_to_grayscale
@@ -128,8 +135,8 @@ def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_outpu
     sum_op = Sum()
     vehicle.add(sum_op, inputs=['detect/_buffer'], outputs=['detect/_sum'])
     # If sum is higher than
-    higher_than = HigherThan(threshold=1.)
-    vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_stop_output])
+    higher_than = HigherThan(threshold=5)
+    vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_do_action])
 
 
 def add_steering_model(vehicle, steering_path, fix_throttle, camera_input, ai_steering_output, ai_throttle_output):
