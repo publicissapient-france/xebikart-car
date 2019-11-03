@@ -20,7 +20,7 @@ from donkeycar.parts.transform import Lambda
 
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
 from xebikart.parts.keras import OneOutputModel
-from xebikart.parts.tflite import AsyncTFLiteModel, AsyncBufferedAction
+from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import KeynoteJoystick
 from xebikart.parts.buffers import Rolling, Sum
@@ -105,13 +105,8 @@ def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    # TODO: AsyncBufferedAction
-    # detection_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=10, rate_hz=2.)
-    exit_model = AsyncTFLiteModel(exit_model_path, rate_hz=1.)
-    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_predict'], threaded=True)
-    # Rolling buffer n last predictions
-    buffer = Rolling(buffer_size=10)
-    vehicle.add(buffer, inputs=['exit/_predict'], outputs=['exit/_buffer'])
+    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=10, rate_hz=2.)
+    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_buffer'], threaded=True)
     # Sum n last predictions
     sum_op = Sum()
     vehicle.add(sum_op, inputs=['exit/_buffer'], outputs=['exit/_sum'])
@@ -127,13 +122,8 @@ def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_outpu
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
     # Predict on transformed image
-    # TODO: AsyncBufferedAction
-    #detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=10, rate_hz=2.)
-    detection_model = AsyncTFLiteModel(detect_model_path, rate_hz=1.)
-    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_predict'], threaded=True)
-    # Rolling buffer n last predictions
-    buffer = Rolling(buffer_size=10)
-    vehicle.add(buffer, inputs=['detect/_predict'], outputs=['detect/_buffer'])
+    detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=10, rate_hz=2.)
+    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_buffer'], threaded=True)
     # Sum n last predictions
     sum_op = Sum()
     vehicle.add(sum_op, inputs=['detect/_buffer'], outputs=['detect/_sum'])
