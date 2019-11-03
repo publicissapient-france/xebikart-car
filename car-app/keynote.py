@@ -20,10 +20,10 @@ from donkeycar.parts.transform import Lambda
 
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
 from xebikart.parts.keras import OneOutputModel
-from xebikart.parts.tflite import AsyncTFLiteModel
+from xebikart.parts.tflite import AsyncTFLiteModel, AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import KeynoteJoystick
-from xebikart.parts.buffers import Sum
+from xebikart.parts.buffers import Rolling, Sum
 from xebikart.parts.condition import HigherThan, LessThan
 from xebikart.parts.driver import KeynoteDriver
 
@@ -105,11 +105,16 @@ def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
+    # TODO: AsyncBufferedAction
+    # detection_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=10, rate_hz=2.)
     exit_model = AsyncTFLiteModel(exit_model_path, rate_hz=1.)
     vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_predict'], threaded=True)
+    # Rolling buffer n last predictions
+    buffer = Rolling(buffer_size=10)
+    vehicle.add(buffer, inputs=['exit/_predict'], outputs=['exit/_buffer'])
     # Sum n last predictions
-    buffer = Sum(buffer_size=10)
-    vehicle.add(buffer, inputs=['exit/_predict'], outputs=['exit/_sum'])
+    sum_op = Sum()
+    vehicle.add(sum_op, inputs=['exit/_buffer'], outputs=['exit/_sum'])
     # If sum is higher than
     higher_than = HigherThan(threshold=5)
     vehicle.add(higher_than, inputs=['exit/_sum'], outputs=[should_stop_output])
@@ -122,11 +127,16 @@ def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_outpu
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
     # Predict on transformed image
+    # TODO: AsyncBufferedAction
+    #detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=10, rate_hz=2.)
     detection_model = AsyncTFLiteModel(detect_model_path, rate_hz=1.)
     vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_predict'], threaded=True)
+    # Rolling buffer n last predictions
+    buffer = Rolling(buffer_size=10)
+    vehicle.add(buffer, inputs=['detect/_predict'], outputs=['detect/_buffer'])
     # Sum n last predictions
-    buffer = Sum(buffer_size=10)
-    vehicle.add(buffer, inputs=['detect/_predict'], outputs=['detect/_sum'])
+    sum_op = Sum()
+    vehicle.add(sum_op, inputs=['detect/_buffer'], outputs=['detect/_sum'])
     # If sum is higher than
     higher_than = HigherThan(threshold=5)
     vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_stop_output])
@@ -154,9 +164,12 @@ def add_brightness_detector(vehicle, camera_input, threshold, threshold_output):
         tf.math.reduce_sum
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['brightness/_reduce'])
+    # Rolling buffer n last predictions
+    buffer = Rolling(buffer_size=10)
+    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=['brightness/_buffer'])
     # Sum n last predictions
-    buffer = Sum(buffer_size=10)
-    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=['brightness/_sum'])
+    sum_op = Sum()
+    vehicle.add(sum_op, inputs=['brightness/_buffer'], outputs=['brightness/_sum'])
     # If sum is higher than
     higher_than = LessThan(threshold=threshold * 10)
     vehicle.add(higher_than, inputs=['brightness/_sum'], outputs=[threshold_output])

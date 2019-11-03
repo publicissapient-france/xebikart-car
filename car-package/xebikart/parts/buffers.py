@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Sum:
+class Rolling:
     def __init__(self, buffer_size):
         self.buffer_size = buffer_size
         self.buffer = np.zeros(self.buffer_size)
@@ -9,4 +9,9 @@ class Sum:
     def run(self, input):
         self.buffer = np.roll(self.buffer, shift=-1, axis=-1)
         self.buffer[0] = input
-        return np.sum(self.buffer)
+        return self.buffer
+
+
+class Sum:
+    def run(self, input_buffer):
+        return np.sum(input_buffer)

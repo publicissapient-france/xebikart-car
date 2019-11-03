@@ -1,5 +1,6 @@
 import time
 import tensorflow as tf
+import numpy as np
 
 
 class AsyncTFLiteModel(object):
@@ -50,3 +51,15 @@ class AsyncTFLiteModel(object):
 
     def shutdown(self):
         self.on = False
+
+
+class AsyncBufferedAction(AsyncTFLiteModel):
+    def __init__(self, buffer_size, *args, **kwargs):
+        super(AsyncBufferedAction, self).__init__(*args, **kwargs)
+        self.buffer = np.zeros(buffer_size)
+
+    def _infer(self, img_arr):
+        prediction = super(AsyncBufferedAction, self)._infer(img_arr)
+        self.buffer = np.roll(self.buffer, shift=-1, axis=-1)
+        self.buffer[0] = prediction
+        return self.buffer
