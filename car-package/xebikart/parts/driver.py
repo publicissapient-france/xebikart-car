@@ -63,11 +63,17 @@ class KeynoteDriver:
         self.es_sequence = [self.ES_START, self.ES_THROTTLE_NEG_ONE, self.ES_THROTTLE_POS_ONE, self.ES_THROTTLE_NEG_TWO]
         self.es_current_sequence = []
         self.ot_sequence = [self.OT_GO_LEFT_TRACK, self.OT_GO_LEFT_TRACK, self.OT_GO_LEFT_TRACK,
+                            self.OT_GO_LEFT_TRACK, self.OT_GO_LEFT_TRACK, self.OT_GO_LEFT_TRACK,
+                            self.OT_RESETTLEMENT_LEFT_TRACK, self.OT_RESETTLEMENT_LEFT_TRACK,
                             self.OT_RESETTLEMENT_LEFT_TRACK, self.OT_RESETTLEMENT_LEFT_TRACK,
                             self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT,
+                            self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT,
+                            self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT,
+                            self.OT_GO_RIGHT_TRACK, self.OT_GO_RIGHT_TRACK, self.OT_GO_RIGHT_TRACK,
                             self.OT_GO_RIGHT_TRACK, self.OT_GO_RIGHT_TRACK, self.OT_GO_RIGHT_TRACK,
                             self.OT_RESETTLEMENT_LEFT_TRACK, self.OT_RESETTLEMENT_LEFT_TRACK,
-                            self.OT_STRAIGHT]
+                            self.OT_RESETTLEMENT_LEFT_TRACK, self.OT_RESETTLEMENT_LEFT_TRACK,
+                            self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT, self.OT_STRAIGHT]
         self.ot_current_sequence = []
 
         # Bind actions to functions
@@ -142,15 +148,15 @@ class KeynoteDriver:
         # TODO: change it !
         current_state = self.ot_current_sequence.pop(0)
         if current_state == self.OT_GO_LEFT_TRACK:
-            return -1.0, self.throttle
+            return -1.0
         elif current_state == self.OT_RESETTLEMENT_LEFT_TRACK:
-            return 0.5, self.throttle
+            return 0.5
         elif current_state == self.OT_STRAIGHT:
-            return 0, self.throttle
+            return 0
         elif current_state == self.OT_GO_RIGHT_TRACK:
-            return 1.0, self.throttle
+            return 1.0
         elif current_state == self.OT_RESETTLEMENT_RIGHT_TRACK:
-            return -0.5, self.throttle
+            return -0.5
 
     def do_actions(self, actions):
         for action in actions:
@@ -163,7 +169,7 @@ class KeynoteDriver:
         if self.is_in_emergency_loop():
             return 0., self.roll_emergency_stop()
         elif self.is_in_overtake_loop():
-            return self.roll_overtake()
+            return self.roll_overtake(), 0.8 * self.throttle_scale
         elif self.is_safe_mode():
             if KeynoteDriver.EXIT_SAFE_MODE in user_actions:
                 self.reset_mode()
