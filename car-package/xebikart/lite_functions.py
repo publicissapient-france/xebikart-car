@@ -23,7 +23,7 @@ def interpreter_and_details(model_path) :
     return interpreter, input_details, output_details
 
 
-def keras_session_to_tflite(model, out_filename):
+def keras_model_to_tflite(model, out_filename):
     inputs = model.inputs
     outputs = model.outputs
     with tf.keras.backend.get_session() as sess:

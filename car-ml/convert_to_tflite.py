@@ -2,7 +2,7 @@ import argparse
 
 import mlflow.keras
 
-from xebikart.lite_functions import keras_session_to_tflite
+from xebikart.lite_functions import keras_model_to_tflite
 
 parser = argparse.ArgumentParser(description='Execute and log notebook to mlflow')
 parser.add_argument('--runid', dest='runid', required=True,
@@ -15,4 +15,4 @@ parser.add_argument('--output-path', dest='output_path', required=True,
 args = parser.parse_args()
 
 model = mlflow.keras.load_model(f"runs:/{args.runid}/{args.model_path}")
-keras_session_to_tflite(model, args.output_path)
+keras_model_to_tflite(model, args.output_path)
