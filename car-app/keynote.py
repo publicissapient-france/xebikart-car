@@ -8,8 +8,8 @@ Options:
     -h --help                    Show this screen.
     --steering-model=<path>      Path to h5 model (steering only) (.h5)
     --throttle=<throttle>        Fix throttle [default: 0.2]
-    --exit-model=<path>          Path to h5 model (exit) (.h5)
-    --detect-model=<path>        Path to h5 model (exit) (.h5)
+    --exit-model=<path>          Path to tflite model (exit) (.tflite)
+    --detect-model=<path>        Path to tflite model (detect) (.tflite)
 """
 
 import logging
@@ -20,9 +20,10 @@ from donkeycar.parts.transform import Lambda
 
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
 from xebikart.parts.keras import OneOutputModel
+from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import KeynoteJoystick
-from xebikart.parts.buffers import Sum
+from xebikart.parts.buffers import Rolling, Sum
 from xebikart.parts.condition import HigherThan, LessThan
 from xebikart.parts.driver import KeynoteDriver
 
@@ -53,15 +54,15 @@ def drive(cfg, args):
     throttle = args["--throttle"]
     add_steering_model(vehicle, steering_model_path, throttle, 'cam/image_array', 'ai/steering', 'ai/throttle')
 
-    # Exit model
-    print("Loading exit model...")
-    exit_model_path = args["--exit-model"]
-    add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
-
     # Detect model
     print("Loading detect model...")
     detect_model_path = args["--detect-model"]
     add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
+
+    # Exit model
+    print("Loading exit model...")
+    exit_model_path = args["--exit-model"]
+    add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
     # Brightness
     print("Loading brightness detector...")
@@ -71,7 +72,7 @@ def drive(cfg, args):
     # AI actions for emergency stop
     ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or z else [])
     vehicle.add(ai_actions_lb,
-                inputs=['exit/should_stop', 'exit/should_stop', 'brightness/should_stop'],
+                inputs=['exit/should_stop', 'detect/should_stop', 'brightness/should_stop'],
                 outputs=['ai/actions'])
 
     # Keynote driver
@@ -86,8 +87,8 @@ def drive(cfg, args):
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
-    #add_logger(vehicle, 'pilot/steering', 'pilot/steering')
-    #add_logger(vehicle, 'pilot/throttle', 'pilot/throttle')
+    #add_logger(vehicle, 'detect/_sum', 'detect/_sum')
+    #add_logger(vehicle, 'exit/_sum', 'exit/_sum')
 
     print("Starting vehicle...")
     vehicle.start(
@@ -99,38 +100,35 @@ def drive(cfg, args):
 def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        image_transformer.generate_crop_fn(0, 80, 160, 40),
+        image_transformer.generate_crop_fn(30, 80, 80, 30),
         tf.image.rgb_to_grayscale
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    exit_model = OneOutputModel()
-    exit_model.load(exit_model_path)
-    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_predict'])
+    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=4.)
+    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_buffer'], threaded=True)
     # Sum n last predictions
-    buffer = Sum(buffer_size=10)
-    vehicle.add(buffer, inputs=['exit/_predict'], outputs=['exit/_sum'])
+    sum_op = Sum()
+    vehicle.add(sum_op, inputs=['exit/_buffer'], outputs=['exit/_sum'])
     # If sum is higher than
-    higher_than = HigherThan(threshold=5)
+    higher_than = HigherThan(threshold=1.)
     vehicle.add(higher_than, inputs=['exit/_sum'], outputs=[should_stop_output])
 
 
 def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        #image_transformer.generate_crop_fn(0, 40, 160, 80),
-        image_transformer.edges
+        tf.image.rgb_to_grayscale
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
     # Predict on transformed image
-    detection_model = OneOutputModel()
-    detection_model.load(detect_model_path)
-    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_predict'])
+    detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=4, rate_hz=4.)
+    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_buffer'], threaded=True)
     # Sum n last predictions
-    buffer = Sum(buffer_size=10)
-    vehicle.add(buffer, inputs=['detect/_predict'], outputs=['detect/_sum'])
+    sum_op = Sum()
+    vehicle.add(sum_op, inputs=['detect/_buffer'], outputs=['detect/_sum'])
     # If sum is higher than
-    higher_than = HigherThan(threshold=5)
+    higher_than = HigherThan(threshold=1.)
     vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_stop_output])
 
 
@@ -156,9 +154,12 @@ def add_brightness_detector(vehicle, camera_input, threshold, threshold_output):
         tf.math.reduce_sum
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['brightness/_reduce'])
+    # Rolling buffer n last predictions
+    buffer = Rolling(buffer_size=10)
+    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=['brightness/_buffer'])
     # Sum n last predictions
-    buffer = Sum(buffer_size=10)
-    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=['brightness/_sum'])
+    sum_op = Sum()
+    vehicle.add(sum_op, inputs=['brightness/_buffer'], outputs=['brightness/_sum'])
     # If sum is higher than
     higher_than = LessThan(threshold=threshold * 10)
     vehicle.add(higher_than, inputs=['brightness/_sum'], outputs=[threshold_output])
