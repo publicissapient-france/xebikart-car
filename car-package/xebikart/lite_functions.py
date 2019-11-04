@@ -34,7 +34,7 @@ def predictor_builder(model_path, preprocess_fn):
 
     def predictor(input_image):
         input_image = preprocess_fn(input_image)
-        input_image = tf.expand_dims(input_image)
+        input_image = tf.expand_dims(input_image, axis=0)
 
         interpreter.set_tensor(input_details[0]['index'], input_image)
         interpreter.invoke()
@@ -42,8 +42,7 @@ def predictor_builder(model_path, preprocess_fn):
         # The function `get_tensor()` returns a copy of the tensor data.
         # Use `tensor()` in order to get a pointer to the tensor.
         output_data = interpreter.get_tensor(output_details[0]['index'])
-
+        output_data = tf.squeeze(output_data, axis=0)
         return output_data
 
     return predictor
-

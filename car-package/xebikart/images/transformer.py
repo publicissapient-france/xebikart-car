@@ -99,3 +99,21 @@ def normalize_gray_scale(tf_image):
     tf_image = tf.image.rgb_to_grayscale(tf_image)
     return tf_image
 
+
+_AUTO_DRIVE_CROP_FN = generate_crop_fn(left_margin=0, width=160, height_margin=40, height=80)
+def auto_drive_preprocess(tf_image):
+    tf_image = normalize(tf_image)
+    tf_image = _AUTO_DRIVE_CROP_FN(tf_image)
+    tf_image = edges(tf_image)
+    return tf_image
+
+
+_DETECT_EXIT_ROAD_CROP_FN = generate_crop_fn(left_margin=30, width=80, height_margin=80, height=30)
+def detect_exit_road_preprocess(tf_image):
+    tf_image = normalize(tf_image)
+    tf_image = _DETECT_EXIT_ROAD_CROP_FN(tf_image)
+    return tf_image
+
+
+def detect_obstacle_preprocess(tf_image):
+    return normalize_gray_scale(tf_image)
