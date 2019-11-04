@@ -54,15 +54,15 @@ def drive(cfg, args):
     throttle = args["--throttle"]
     add_steering_model(vehicle, steering_model_path, throttle, 'cam/image_array', 'ai/steering', 'ai/throttle')
 
-    # Exit model
-    print("Loading exit model...")
-    exit_model_path = args["--exit-model"]
-    add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
-
     # Detect model
     print("Loading detect model...")
     detect_model_path = args["--detect-model"]
     add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
+
+    # Exit model
+    print("Loading exit model...")
+    exit_model_path = args["--exit-model"]
+    add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
     # Brightness
     print("Loading brightness detector...")
@@ -87,8 +87,8 @@ def drive(cfg, args):
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
-    #add_logger(vehicle, 'pilot/steering', 'pilot/steering')
-    #add_logger(vehicle, 'pilot/throttle', 'pilot/throttle')
+    add_logger(vehicle, 'detect/_sum', 'detect/_sum')
+    add_logger(vehicle, 'exit/_sum', 'exit/_sum')
 
     print("Starting vehicle...")
     vehicle.start(
@@ -100,35 +100,35 @@ def drive(cfg, args):
 def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        image_transformer.generate_crop_fn(0, 80, 160, 40),
-        tf.image.rgb_to_grayscale
+        image_transformer.generate_crop_fn(30, 80, 80, 30)
+        #tf.image.rgb_to_grayscale
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=10, rate_hz=2.)
+    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=2.)
     vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_buffer'], threaded=True)
     # Sum n last predictions
     sum_op = Sum()
     vehicle.add(sum_op, inputs=['exit/_buffer'], outputs=['exit/_sum'])
     # If sum is higher than
-    higher_than = HigherThan(threshold=5)
+    higher_than = HigherThan(threshold=1.)
     vehicle.add(higher_than, inputs=['exit/_sum'], outputs=[should_stop_output])
 
 
 def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        image_transformer.edges
+        tf.image.rgb_to_grayscale
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
     # Predict on transformed image
-    detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=10, rate_hz=2.)
+    detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=4, rate_hz=4.)
     vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_buffer'], threaded=True)
     # Sum n last predictions
     sum_op = Sum()
     vehicle.add(sum_op, inputs=['detect/_buffer'], outputs=['detect/_sum'])
     # If sum is higher than
-    higher_than = HigherThan(threshold=5)
+    higher_than = HigherThan(threshold=1.)
     vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_stop_output])
 
 

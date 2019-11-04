@@ -2,6 +2,8 @@ import time
 import tensorflow as tf
 import numpy as np
 
+from xebikart.lite_functions import interpreter_and_details
+
 
 class AsyncTFLiteModel(object):
 
@@ -13,25 +15,16 @@ class AsyncTFLiteModel(object):
         self.on = True
 
         # Load TFLite model and allocate tensors.
-        self.interpreter = tf.lite.Interpreter(model_path=model_path)
-        self.interpreter.allocate_tensors()
-
-        # Get input and output tensors.
-        self.input_details = self.interpreter.get_input_details()
-        self.output_details = self.interpreter.get_output_details()
-
-        # Get Input shape
-        self.input_shape = self.input_details[0]['shape']
+        self.interpreter, self.input_details, self.output_details = interpreter_and_details(model_path)
 
     def _infer(self, img_arr):
+        img_arr = tf.expand_dims(img_arr, axis=0)
         self.interpreter.set_tensor(self.input_details[0]['index'], img_arr)
         self.interpreter.invoke()
 
-        outputs = []
-        for tensor in self.output_details:
-            output_data = self.interpreter.get_tensor(tensor['index'])
-            outputs.append(output_data[0][0])
-        return outputs[0]
+        output_data = self.interpreter.get_tensor(self.output_details[0]['index'])
+        output_data = tf.squeeze(output_data, axis=0)
+        return output_data
 
     def update(self):
         while self.on:
