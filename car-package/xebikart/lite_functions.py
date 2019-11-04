@@ -23,25 +23,18 @@ def interpreter_and_details(model_path) :
     return interpreter, input_details, output_details
 
 
-def keras_model_to_tflite(model, out_filename):
-    inputs = model.inputs
-    outputs = model.outputs
-    with tf.keras.backend.get_session() as sess:
-        converter = tf.lite.TFLiteConverter.from_session(sess, inputs, outputs)
-        tflite_model = converter.convert()
-        open(out_filename, "wb").write(tflite_model)
-
-
-def predictor_builder(model_path):
+def predictor_builder(model_path, preprocess_fn):
     """
-    get a predictor from a lite model
+    get a predictor from a lite model and the corresponding preprocess
     :param model_path: lite model path
+    :param preprocess_fn: function used to process the image
     :return: predictor : a function that take a tf image and make the prediction
     """
     interpreter, input_details, output_details = interpreter_and_details(model_path)
 
     def predictor(input_image):
-        input_image = tf.expand_dims(input_image)
+        input_image = preprocess_fn(input_image)
+        input_image = tf.expand_dims(input_image, axis=0)
 
         interpreter.set_tensor(input_details[0]['index'], input_image)
         interpreter.invoke()
@@ -49,9 +42,16 @@ def predictor_builder(model_path):
         # The function `get_tensor()` returns a copy of the tensor data.
         # Use `tensor()` in order to get a pointer to the tensor.
         output_data = interpreter.get_tensor(output_details[0]['index'])
-        output_data = tf.squeeze(output_data)
-
+        output_data = tf.squeeze(output_data, axis=0)
         return output_data
 
     return predictor
 
+
+def keras_model_to_tflite(model, out_filename):
+    inputs = model.inputs
+    outputs = model.outputs
+    with tf.keras.backend.get_session() as sess:
+        converter = tf.lite.TFLiteConverter.from_session(sess, inputs, outputs)
+        tflite_model = converter.convert()
+        open(out_filename, "wb").write(tflite_model)
