@@ -46,13 +46,3 @@ def predictor_builder(model_path, preprocess_fn):
         return output_data
 
     return predictor
-
-
-def keras_model_to_tflite(model, out_filename):
-    inputs = model.inputs
-    outputs = model.outputs
-    with tf.keras.backend.get_session() as sess:
-        converter = tf.lite.TFLiteConverter.from_session(sess, inputs, outputs)
-        converter.optimizations = [tf.lite.Optimize.OPTIMIZE_FOR_SIZE]
-        tflite_model = converter.convert()
-        open(out_filename, "wb").write(tflite_model)
