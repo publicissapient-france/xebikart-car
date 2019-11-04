@@ -87,8 +87,8 @@ def drive(cfg, args):
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
-    add_logger(vehicle, 'detect/_sum', 'detect/_sum')
-    add_logger(vehicle, 'exit/_sum', 'exit/_sum')
+    #add_logger(vehicle, 'detect/_sum', 'detect/_sum')
+    #add_logger(vehicle, 'exit/_sum', 'exit/_sum')
 
     print("Starting vehicle...")
     vehicle.start(
@@ -100,12 +100,12 @@ def drive(cfg, args):
 def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        image_transformer.generate_crop_fn(30, 80, 80, 30)
-        #tf.image.rgb_to_grayscale
+        image_transformer.generate_crop_fn(30, 80, 80, 30),
+        tf.image.rgb_to_grayscale
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=2.)
+    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=4.)
     vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_buffer'], threaded=True)
     # Sum n last predictions
     sum_op = Sum()
