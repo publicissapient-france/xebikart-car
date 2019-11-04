@@ -135,7 +135,7 @@ def add_detect_model(vehicle, detect_model_path, camera_input, should_do_action)
     sum_op = Sum()
     vehicle.add(sum_op, inputs=['detect/_buffer'], outputs=['detect/_sum'])
     # If sum is higher than
-    higher_than = HigherThan(threshold=5)
+    higher_than = HigherThan(threshold=1.)
     vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_do_action])
 
 
