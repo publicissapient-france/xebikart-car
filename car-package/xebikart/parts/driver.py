@@ -93,6 +93,9 @@ class KeynoteDriver:
         self.set_safe_mode()
         self.es_current_sequence = self.es_sequence.copy()
 
+    def initiate_return_on_road(self):
+        self.modes = [self.MODE_AI]
+
     def exit_safe_mode(self):
         if self.is_safe_mode():
             self.reset_mode()
@@ -130,6 +133,8 @@ class KeynoteDriver:
             if KeynoteDriver.EXIT_SAFE_MODE in user_actions:
                 self.reset_mode()
             return user_steering, user_throttle
+        elif self.is_return_on_road():
+            return
         else:
             self.do_actions(user_actions)
             self.do_actions(ai_actions)
