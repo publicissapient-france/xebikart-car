@@ -1,9 +1,12 @@
-import config
-
 import numpy as np
+
+from abc import ABC, abstractmethod
 
 
 class Driver:
+
+    def __init__(self, config):
+        self.config = config
 
     def run(
             self,
@@ -14,9 +17,9 @@ class Driver:
             dx, dy, dz, tx, ty, tz  # from imu
     ):
         if mode == 'user':
-            return user_angle, user_throttle, True, config.IMU_ENABLED, config.LIDAR_ENABLED
+            return user_angle, user_throttle, True, self.config.IMU_ENABLED, self.config.LIDAR_ENABLED
         else:
-            return pilot_angle, pilot_throttle, False, config.IMU_ENABLED, config.LIDAR_ENABLED
+            return pilot_angle, pilot_throttle, False, self.config.IMU_ENABLED, self.config.LIDAR_ENABLED
 
 
 class Mode:
@@ -35,102 +38,148 @@ class Mode:
 
 
 class KeynoteDriver:
-    MODE_USER = "user"
-    MODE_AI_STEERING = "ai_steering"
-    MODE_AI = "ai"
-    MODE_SAFE = "safe"
+    EMERGENCY_STOP = "emergency_stop"
+    MODE_TOGGLE = "mode_toggle"
+    EXIT_SAFE_MODE = "exit_safe_mode"
+    INCREASE_THROTTLE = "increase_throttle"
+    DECREASE_THROTTLE = "decrease_throttle"
 
+    def __init__(self):
+        self.current_mode = UserMode()
+
+    def run(self, user_steering, user_throttle, user_actions,
+            ai_steering, detect_buffer, exit_buffer, brightness_buffer):
+
+        steering, throttle = self.current_mode.run(user_steering, user_throttle, user_actions,
+                                                   ai_steering, detect_buffer, exit_buffer, brightness_buffer)
+        self.current_mode = self.current_mode.next_mode
+        return steering, throttle
+
+
+class Mode(ABC):
+    def __init__(self):
+        self.js_actions_fn = {}
+        self.next_mode = self
+
+    def do_js_actions(self, actions):
+        for action in actions:
+            if action in self.js_actions_fn:
+                self.js_actions_fn[action]()
+            else:
+                print("WARN: {} action does not exist.".format(action))
+
+    def set_next_mode(self, next_mode):
+        self.next_mode = next_mode
+
+    def fn_set_next_mode(self, next_mode):
+        return lambda: self.set_next_mode(next_mode)
+
+    @abstractmethod
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
+            brightness_buffer):
+        raise NotImplemented
+
+
+class SafeMode(Mode):
+    def __init__(self):
+        super(SafeMode, self).__init__()
+        self.js_actions_fn = {
+            KeynoteDriver.EXIT_SAFE_MODE: self.fn_set_next_mode(UserMode())
+        }
+
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
+            brightness_buffer):
+        self.do_js_actions(user_actions)
+        return user_steering, user_throttle
+
+
+class EmergencyStopMode(Mode):
     ES_START = 1
     ES_THROTTLE_NEG_ONE = 2
     ES_THROTTLE_POS_ONE = 3
     ES_THROTTLE_NEG_TWO = 4
 
-    EMERGENCY_STOP = "emergency_stop"
-    MODE_TOGGLE = "mode_toggle"
-    EXIT_SAFE_MODE = "exit_safe_mode"
-
-    def __init__(self, throttle_scale):
-        self.default_modes = [KeynoteDriver.MODE_USER, KeynoteDriver.MODE_AI_STEERING, KeynoteDriver.MODE_AI]
-        self.modes = self.default_modes
+    def __init__(self):
+        super(EmergencyStopMode, self).__init__()
         # Emergency stop sequences
-        self.es_sequence = [self.ES_START, self.ES_THROTTLE_NEG_ONE, self.ES_THROTTLE_POS_ONE, self.ES_THROTTLE_NEG_TWO]
+        self.es_sequence = [-0.4, 0.01, -0.4, 0., 0.,
+                            0., 0., 0., 0., 0., 0., 0.]
         self.es_current_sequence = []
-        # Bind actions to functions
-        self.actions_fn = {
-            KeynoteDriver.EMERGENCY_STOP: self.initiate_emergency_stop,
-            KeynoteDriver.MODE_TOGGLE: self.roll_mode
-        }
-        # TODO: find a way to remove it
-        self.throttle_scale = throttle_scale
-        self.throttle = 0.0
 
-    def roll_mode(self):
-        self.modes = np.roll(self.modes, shift=-1)
-
-    def reset_mode(self):
-        self.modes = self.default_modes
-
-    def set_safe_mode(self):
-        self.modes = [self.MODE_SAFE]
-
-    def is_safe_mode(self):
-        return self.current_mode() == self.MODE_SAFE
-
-    def current_mode(self):
-        return self.modes[0]
-
-    def mode_steering_throttle(self, user_steering, user_throttle, ai_steering, ai_throttle):
-        if self.current_mode() == KeynoteDriver.MODE_USER:
-            return user_steering, user_throttle
-        elif self.current_mode() == KeynoteDriver.MODE_AI_STEERING:
-            return ai_steering, user_throttle
-        elif self.current_mode() == KeynoteDriver.MODE_AI:
-            return ai_steering, ai_throttle
-        else:
-            return 0., 0.
-
-    def initiate_emergency_stop(self):
-        self.set_safe_mode()
-        self.es_current_sequence = self.es_sequence.copy()
-
-    def exit_safe_mode(self):
-        if self.is_safe_mode():
-            self.reset_mode()
-
-    def is_in_emergency_loop(self):
+    def is_in_loop(self):
         return len(self.es_current_sequence) > 0
 
     def roll_emergency_stop(self):
-        # TODO: change it !
-        current_state = self.es_current_sequence.pop(0)
-        if current_state == self.ES_START:
-            return -1.0 * self.throttle_scale
-        elif current_state == self.ES_THROTTLE_NEG_ONE:
-            return 0.01
-        elif current_state == self.ES_THROTTLE_POS_ONE:
-            self.throttle = -1.0 * self.throttle_scale
-            return self.throttle
-        elif current_state == self.ES_THROTTLE_NEG_TWO:
-            self.throttle += 0.05
-            if self.throttle >= 0.0:
-                self.throttle = 0.0
-            return self.throttle
+        throttle = self.es_current_sequence.pop(0)
+        return throttle
 
-    def do_actions(self, actions):
-        for action in actions:
-            if action in self.actions_fn:
-                self.actions_fn[action]()
-            else:
-                print("WARN: {} action does not exist.".format(action))
-
-    def run(self, user_steering, user_throttle, user_actions, ai_steering, ai_throttle, ai_actions):
-        if self.is_in_emergency_loop():
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
+            brightness_buffer):
+        if self.is_in_loop():
             return 0., self.roll_emergency_stop()
-        elif self.is_safe_mode():
-            if KeynoteDriver.EXIT_SAFE_MODE in user_actions:
-                self.reset_mode()
-            return user_steering, user_throttle
         else:
-            self.do_actions(user_actions)
-            self.do_actions(ai_actions)
-            return self.mode_steering_throttle(user_steering, user_throttle, ai_steering, ai_throttle)
+            self.set_next_mode(SafeMode())
+            return 0., 0.
+
+
+class UserMode(Mode):
+    def __init__(self):
+        super(UserMode, self).__init__()
+        self.js_actions_fn = {
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
+            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AISteeringMode())
+        }
+
+    def check_ai_buffers(self, detect_buffer, exit_buffer, brightness_buffer):
+        if np.sum(detect_buffer) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+            self.set_next_mode(EmergencyStopMode())
+
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
+            brightness_buffer):
+        self.do_js_actions(user_actions)
+        self.check_ai_buffers(detect_buffer, exit_buffer, brightness_buffer)
+        return user_steering, user_throttle
+
+
+class AISteeringMode(Mode):
+    def __init__(self):
+        super(AISteeringMode, self).__init__()
+        self.js_actions_fn = {
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
+            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AIMode())
+        }
+
+    def check_ai_buffers(self, detect_buffer, exit_buffer, brightness_buffer):
+        if np.sum(detect_buffer) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+            self.set_next_mode(EmergencyStopMode())
+
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
+            brightness_buffer):
+        self.do_js_actions(user_actions)
+        self.check_ai_buffers(detect_buffer, exit_buffer, brightness_buffer)
+        return ai_steering, user_throttle
+
+
+class AIMode(Mode):
+    def __init__(self):
+        super(AIMode, self).__init__()
+        self.js_actions_fn = {
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
+            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(UserMode()),
+            KeynoteDriver.INCREASE_THROTTLE: self.fn_throttle(0.1),
+            KeynoteDriver.DECREASE_THROTTLE: self.fn_throttle(-0.1)
+        }
+        self.const_throttle = 0.2
+
+    def fn_throttle(self, to_add):
+        return lambda: self.const_throttle + to_add
+
+    def check_ai_buffers(self, detect_buffer, exit_buffer, brightness_buffer):
+        if np.sum(detect_buffer) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+            self.set_next_mode(EmergencyStopMode())
+
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
+            brightness_buffer):
+        self.do_js_actions(user_actions)
+        self.check_ai_buffers(detect_buffer, exit_buffer, brightness_buffer)
+        return ai_steering, self.const_throttle

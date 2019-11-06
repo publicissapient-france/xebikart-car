@@ -79,7 +79,7 @@ def drive(cfg, model_path=None):
         run_condition='run_pilot'
     )
 
-    driver = Driver()
+    driver = Driver(cfg)
     vehicle.add(
         driver,
         inputs=[
