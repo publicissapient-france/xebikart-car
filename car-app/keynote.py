@@ -52,28 +52,21 @@ def drive(cfg, args):
     print("Loading steering model...")
     steering_model_path = args["--steering-model"]
     throttle = args["--throttle"]
-    add_steering_model(vehicle, steering_model_path, throttle, 'cam/image_array', 'ai/steering', 'ai/throttle')
+    add_steering_model(vehicle, steering_model_path, 'cam/image_array', 'ai/steering')
 
     # Detect model
     print("Loading detect model...")
     detect_model_path = args["--detect-model"]
-    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/should_stop')
+    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/buffer')
 
     # Exit model
     print("Loading exit model...")
     exit_model_path = args["--exit-model"]
-    add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
+    add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/buffer')
 
     # Brightness
     print("Loading brightness detector...")
-    add_brightness_detector(vehicle, 'cam/image_array', 50000, 'brightness/should_stop')
-
-    # TODO: find a better way to map ai outputs and driver actions
-    # AI actions for emergency stop
-    ai_actions_lb = Lambda(lambda x, y, z: [KeynoteDriver.EMERGENCY_STOP] if x or y or z else [])
-    vehicle.add(ai_actions_lb,
-                inputs=['exit/should_stop', 'detect/should_stop', 'brightness/should_stop'],
-                outputs=['ai/actions'])
+    add_brightness_detector(vehicle, 'cam/image_array', 'brightness/buffer')
 
     # Keynote driver
     print("Loading keynote driver...")
@@ -81,7 +74,8 @@ def drive(cfg, args):
         throttle_scale=cfg.JOYSTICK_MAX_THROTTLE
     )
     vehicle.add(driver,
-                inputs=['js/steering', 'js/throttle', 'js/actions', 'ai/steering', 'ai/throttle', 'ai/actions'],
+                inputs=['js/steering', 'js/throttle', 'js/actions',
+                        'ai/steering', 'detect/buffer', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle'])
 
     add_steering(vehicle, cfg, 'pilot/steering')
@@ -97,7 +91,7 @@ def drive(cfg, args):
     )
 
 
-def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
+def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
         image_transformer.generate_crop_fn(30, 80, 80, 30),
@@ -106,16 +100,10 @@ def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
     exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=4.)
-    vehicle.add(exit_model, inputs=['exit/_image'], outputs=['exit/_buffer'], threaded=True)
-    # Sum n last predictions
-    sum_op = Sum()
-    vehicle.add(sum_op, inputs=['exit/_buffer'], outputs=['exit/_sum'])
-    # If sum is higher than
-    higher_than = HigherThan(threshold=1.)
-    vehicle.add(higher_than, inputs=['exit/_sum'], outputs=[should_stop_output])
+    vehicle.add(exit_model, inputs=['exit/_image'], outputs=[exit_model_output], threaded=True)
 
 
-def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_output):
+def add_detect_model(vehicle, detect_model_path, camera_input, detect_model_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
         tf.image.rgb_to_grayscale
@@ -123,16 +111,10 @@ def add_detect_model(vehicle, detect_model_path, camera_input, should_stop_outpu
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
     # Predict on transformed image
     detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=4, rate_hz=4.)
-    vehicle.add(detection_model, inputs=['detect/_image'], outputs=['detect/_buffer'], threaded=True)
-    # Sum n last predictions
-    sum_op = Sum()
-    vehicle.add(sum_op, inputs=['detect/_buffer'], outputs=['detect/_sum'])
-    # If sum is higher than
-    higher_than = HigherThan(threshold=1.)
-    vehicle.add(higher_than, inputs=['detect/_sum'], outputs=[should_stop_output])
+    vehicle.add(detection_model, inputs=['detect/_image'], outputs=[detect_model_output], threaded=True)
 
 
-def add_steering_model(vehicle, steering_path, fix_throttle, camera_input, ai_steering_output, ai_throttle_output):
+def add_steering_model(vehicle, steering_path, camera_input, steering_model_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
         image_transformer.generate_crop_fn(0, 40, 160, 80),
@@ -142,13 +124,10 @@ def add_steering_model(vehicle, steering_path, fix_throttle, camera_input, ai_st
     # Predict on transformed image
     steering_model = OneOutputModel()
     steering_model.load(steering_path)
-    vehicle.add(steering_model, inputs=['ai/_image'], outputs=[ai_steering_output])
-    # Throttle is fixed
-    fix_throttle_lb = Lambda(lambda: float(fix_throttle))
-    vehicle.add(fix_throttle_lb, outputs=[ai_throttle_output])
+    vehicle.add(steering_model, inputs=['ai/_image'], outputs=[steering_model_output])
 
 
-def add_brightness_detector(vehicle, camera_input, threshold, threshold_output):
+def add_brightness_detector(vehicle, camera_input, brightness_output):
     image_transformation = ImageTransformation([
         lambda x: tf.dtypes.cast(x, "int32"),
         tf.math.reduce_sum
@@ -156,13 +135,7 @@ def add_brightness_detector(vehicle, camera_input, threshold, threshold_output):
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['brightness/_reduce'])
     # Rolling buffer n last predictions
     buffer = Rolling(buffer_size=10)
-    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=['brightness/_buffer'])
-    # Sum n last predictions
-    sum_op = Sum()
-    vehicle.add(sum_op, inputs=['brightness/_buffer'], outputs=['brightness/_sum'])
-    # If sum is higher than
-    higher_than = LessThan(threshold=threshold * 10)
-    vehicle.add(higher_than, inputs=['brightness/_sum'], outputs=[threshold_output])
+    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=[brightness_output])
 
 
 if __name__ == '__main__':
