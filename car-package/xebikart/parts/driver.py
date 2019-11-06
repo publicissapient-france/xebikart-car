@@ -47,11 +47,10 @@ class KeynoteDriver:
     def __init__(self):
         self.current_mode = UserMode()
 
-    def run(self, user_steering, user_throttle, user_actions,
-            ai_steering, detect_buffer, exit_buffer, brightness_buffer):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
 
         steering, throttle = self.current_mode.run(user_steering, user_throttle, user_actions,
-                                                   ai_steering, detect_buffer, exit_buffer, brightness_buffer)
+                                                   ai_steering, detect_box, exit_buffer, brightness_buffer)
         self.current_mode = self.current_mode.next_mode
         return steering, throttle
 
@@ -75,8 +74,7 @@ class Mode(ABC):
         return lambda: self.set_next_mode(next_mode)
 
     @abstractmethod
-    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
-            brightness_buffer):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         raise NotImplemented
 
 
@@ -87,8 +85,7 @@ class SafeMode(Mode):
             KeynoteDriver.EXIT_SAFE_MODE: self.fn_set_next_mode(UserMode())
         }
 
-    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
-            brightness_buffer):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
         return user_steering, user_throttle
 
@@ -113,8 +110,7 @@ class EmergencyStopMode(Mode):
         throttle = self.es_current_sequence.pop(0)
         return throttle
 
-    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
-            brightness_buffer):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         if self.is_in_loop():
             return 0., self.roll_emergency_stop()
         else:
@@ -130,14 +126,13 @@ class UserMode(Mode):
             KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AISteeringMode())
         }
 
-    def check_ai_buffers(self, detect_buffer, exit_buffer, brightness_buffer):
-        if np.sum(detect_buffer) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+    def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
+        if np.sum(detect_box) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
             self.set_next_mode(EmergencyStopMode())
 
-    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
-            brightness_buffer):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
-        self.check_ai_buffers(detect_buffer, exit_buffer, brightness_buffer)
+        self.check_ai_buffers(detect_box, exit_buffer, brightness_buffer)
         return user_steering, user_throttle
 
 
@@ -149,14 +144,13 @@ class AISteeringMode(Mode):
             KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AIMode())
         }
 
-    def check_ai_buffers(self, detect_buffer, exit_buffer, brightness_buffer):
-        if np.sum(detect_buffer) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+    def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
+        if np.sum(detect_box) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
             self.set_next_mode(EmergencyStopMode())
 
-    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
-            brightness_buffer):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
-        self.check_ai_buffers(detect_buffer, exit_buffer, brightness_buffer)
+        self.check_ai_buffers(detect_box, exit_buffer, brightness_buffer)
         return ai_steering, user_throttle
 
 
@@ -174,12 +168,11 @@ class AIMode(Mode):
     def fn_throttle(self, to_add):
         return lambda: self.const_throttle + to_add
 
-    def check_ai_buffers(self, detect_buffer, exit_buffer, brightness_buffer):
-        if np.sum(detect_buffer) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+    def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
+        if np.sum(detect_box) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
             self.set_next_mode(EmergencyStopMode())
 
-    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_buffer, exit_buffer,
-            brightness_buffer):
+    def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
-        self.check_ai_buffers(detect_buffer, exit_buffer, brightness_buffer)
+        self.check_ai_buffers(detect_box, exit_buffer, brightness_buffer)
         return ai_steering, self.const_throttle

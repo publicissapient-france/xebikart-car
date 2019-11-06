@@ -1,3 +1,6 @@
+from xebikart.images import detect
+
+
 class ImageTransformation:
     def __init__(self, transformations_fn):
         self.transformations_fn = transformations_fn
@@ -23,3 +26,13 @@ class TFSessImageTransformation:
 
     def run(self, img_arr):
         return self.sess.run(self.output, {self.input: img_arr})
+
+
+class ExtractColorBoxArea:
+    def __init__(self, color_to_detect, epsilon, nb_pixel_min):
+        self.color_to_detect = color_to_detect
+        self.epsilon = epsilon
+        self.nb_pixel_min = nb_pixel_min
+
+    def run(self, img_arr):
+        return detect.bounding_color_area(img_arr, self.color_to_detect, self.epsilon, self.nb_pixel_min)

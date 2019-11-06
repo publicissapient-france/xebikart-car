@@ -2,29 +2,27 @@
 
 """
 Usage:
-    keynote.py --steering-model=<steering_model_path> --exit-model=<exit_model_path> --detect-model=<detect_model_path> [--throttle=<throttle>]
+    keynote.py --steering-model=<steering_model_path> --exit-model=<exit_model_path> [--color=<color>] [--throttle=<throttle>]
 
 Options:
     -h --help                    Show this screen.
     --steering-model=<path>      Path to h5 model (steering only) (.h5)
-    --throttle=<throttle>        Fix throttle [default: 0.2]
     --exit-model=<path>          Path to tflite model (exit) (.tflite)
-    --detect-model=<path>        Path to tflite model (detect) (.tflite)
+    --color=<color>              Color to detect in picture [default: 245,152,66]
+    --throttle=<throttle>        Fix throttle [default: 0.2]
 """
 
 import logging
 from docopt import docopt
 
 import donkeycar as dk
-from donkeycar.parts.transform import Lambda
 
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
 from xebikart.parts.keras import OneOutputModel
 from xebikart.parts.tflite import AsyncBufferedAction
-from xebikart.parts.image import ImageTransformation
+from xebikart.parts.image import ImageTransformation, ExtractColorBoxArea
 from xebikart.parts.joystick import KeynoteJoystick
-from xebikart.parts.buffers import Rolling, Sum
-from xebikart.parts.condition import HigherThan, LessThan
+from xebikart.parts.buffers import Rolling
 from xebikart.parts.driver import KeynoteDriver
 
 import xebikart.images.transformer as image_transformer
@@ -54,15 +52,15 @@ def drive(cfg, args):
     throttle = args["--throttle"]
     add_steering_model(vehicle, steering_model_path, 'cam/image_array', 'ai/steering')
 
-    # Detect model
-    print("Loading detect model...")
-    detect_model_path = args["--detect-model"]
-    add_detect_model(vehicle, detect_model_path, 'cam/image_array', 'detect/buffer')
-
     # Exit model
     print("Loading exit model...")
     exit_model_path = args["--exit-model"]
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/buffer')
+
+    # Detect color boxes
+    print("Loading color boxes detector...")
+    color_to_detect = args["--color"].split(",")
+    add_color_box_detector(vehicle, color_to_detect, 'cam/image_array', 'detect/box')
 
     # Brightness
     print("Loading brightness detector...")
@@ -70,12 +68,10 @@ def drive(cfg, args):
 
     # Keynote driver
     print("Loading keynote driver...")
-    driver = KeynoteDriver(
-        throttle_scale=cfg.JOYSTICK_MAX_THROTTLE
-    )
+    driver = KeynoteDriver()
     vehicle.add(driver,
                 inputs=['js/steering', 'js/throttle', 'js/actions',
-                        'ai/steering', 'detect/buffer', 'exit/buffer', 'brightness/buffer'],
+                        'ai/steering', 'detect/box', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle'])
 
     add_steering(vehicle, cfg, 'pilot/steering')
@@ -103,15 +99,10 @@ def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
     vehicle.add(exit_model, inputs=['exit/_image'], outputs=[exit_model_output], threaded=True)
 
 
-def add_detect_model(vehicle, detect_model_path, camera_input, detect_model_output):
-    image_transformation = ImageTransformation([
-        image_transformer.normalize,
-        tf.image.rgb_to_grayscale
-    ])
-    vehicle.add(image_transformation, inputs=[camera_input], outputs=['detect/_image'])
-    # Predict on transformed image
-    detection_model = AsyncBufferedAction(model_path=detect_model_path, buffer_size=4, rate_hz=4.)
-    vehicle.add(detection_model, inputs=['detect/_image'], outputs=[detect_model_output], threaded=True)
+def add_color_box_detector(vehicle, color_to_detect, camera_input, detect_model_output):
+    # Get color box from image
+    detection_model = ExtractColorBoxArea(color_to_detect=color_to_detect, epsilon=30, nb_pixel_min=10)
+    vehicle.add(detection_model, inputs=[camera_input], outputs=[detect_model_output])
 
 
 def add_steering_model(vehicle, steering_path, camera_input, steering_model_output):
