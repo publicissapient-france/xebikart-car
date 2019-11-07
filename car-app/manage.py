@@ -21,7 +21,7 @@ from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
-from xebikart.parts.lidar import RPLidar
+from xebikart.parts.lidar import RPLidar, LidarPosition
 from xebikart.parts.mqtt import MQTTClient
 
 
@@ -90,8 +90,19 @@ def drive(cfg, model_path=None):
     vehicle.add(
         lidar,
         outputs=[
-            'lidar/distances',
-            'lidar/angles'
+            'lidar/scan'
+        ],
+        threaded=True
+    )
+
+    position = LidarPosition()
+    vehicle.add(
+        position,
+        inputs=[
+            'lidar/scan'
+        ],
+        outputs=[
+            'lidar/position'
         ],
         threaded=True
     )
