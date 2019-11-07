@@ -127,8 +127,14 @@ class UserMode(Mode):
         }
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
-        if np.sum(detect_box) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
             self.set_next_mode(EmergencyStopMode())
+
+        # max_y
+        if 75 < detect_box[2] <= 120:
+            # min_x
+            if 0 <= detect_box[1] < 100:
+                self.set_next_mode(EmergencyStopMode())
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
@@ -145,13 +151,44 @@ class AISteeringMode(Mode):
         }
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
-        if np.sum(detect_box) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
             self.set_next_mode(EmergencyStopMode())
+
+        # max_y
+        if 75 < detect_box[2] <= 120:
+            # min_x
+            if 0 <= detect_box[1] < 100:
+                self.set_next_mode(EmergencyStopMode())
+
+    def change_steering_on_obstacle(self, detect_box, ai_steering):
+        # max_y
+        if 40 < detect_box[2] <= 60:
+            # min_x
+            if 0 <= detect_box[1] < 40:
+                return -0.8
+            elif 40 <= detect_box[1] < 80:
+                return -0.6
+            elif 80 <= detect_box[1] < 120:
+                return -0.2
+        if 60 < detect_box[2] <= 120:
+            # min_x
+            if 0 <= detect_box[1] < 40:
+                return -1.
+            elif 40 <= detect_box[1] < 80:
+                return -0.6
+            elif 80 <= detect_box[1] < 120:
+                return -0.2
+
+        return ai_steering
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
         self.check_ai_buffers(detect_box, exit_buffer, brightness_buffer)
-        return ai_steering, user_throttle
+        # if obstacle 40 < max_y <= 120
+        if 40 < detect_box[2] <= 120:
+            return self.change_steering_on_obstacle(detect_box, ai_steering), user_throttle
+        else:
+            return ai_steering, user_throttle
 
 
 class AIMode(Mode):
@@ -169,10 +206,41 @@ class AIMode(Mode):
         return lambda: self.const_throttle + to_add
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
-        if np.sum(detect_box) > 1. or np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
             self.set_next_mode(EmergencyStopMode())
+
+        # max_y
+        if 80 < detect_box[2] <= 120:
+            # min_x
+            if 0 <= detect_box[1] < 100:
+                self.set_next_mode(EmergencyStopMode())
+
+    def change_steering_on_obstacle(self, detect_box, ai_steering):
+        # max_y
+        if 40 < detect_box[2] <= 60:
+            # min_x
+            if 0 <= detect_box[1] < 40:
+                return -0.8
+            elif 40 <= detect_box[1] < 80:
+                return -0.6
+            elif 80 <= detect_box[1] < 120:
+                return -0.2
+        if 60 < detect_box[2] <= 120:
+            # min_x
+            if 0 <= detect_box[1] < 40:
+                return -1.
+            elif 40 <= detect_box[1] < 80:
+                return -0.6
+            elif 80 <= detect_box[1] < 120:
+                return -0.2
+
+        return ai_steering
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
         self.check_ai_buffers(detect_box, exit_buffer, brightness_buffer)
-        return ai_steering, self.const_throttle
+        # if obstacle 40 < max_y <= 120
+        if 40 < detect_box[2] <= 120:
+            return self.change_steering_on_obstacle(detect_box, ai_steering), self.const_throttle
+        else:
+            return ai_steering, self.const_throttle

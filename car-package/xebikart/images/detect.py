@@ -18,24 +18,20 @@ def color_area(tf_image_original, color_to_detect, epsilon):
 
 
 def bounding_shape_in_box(tf_binary_mask, nb_pixel_min):
-    min_axis = []
-    max_axis = []
+    x_threshold = tf_binary_mask.shape[0] - nb_pixel_min
+    x_sum_axis = tf.math.reduce_sum(tf_binary_mask, axis=0)
+    x_min = tf.math.reduce_min(tf.where(x_sum_axis <= int(x_threshold)))
+    x_max = tf.math.reduce_max(tf.where(x_sum_axis <= int(x_threshold)))
 
-    for i in range(2):
-        threshold = tf_binary_mask.shape[i] - nb_pixel_min
-        tf_sum_axisi = tf.math.reduce_sum(tf_binary_mask, axis=i)
-        min_ = tf.math.reduce_min(tf.where(tf_sum_axisi <= int(threshold)))
-        max_ = tf.math.reduce_max(tf.where(tf_sum_axisi <= int(threshold)))
-        min_axis.append(min_ / tf_binary_mask.shape[(1 - i) ** 2])
-        max_axis.append(max_ / tf_binary_mask.shape[(1 - i) ** 2])
+    y_threshold = tf_binary_mask.shape[1] - nb_pixel_min
+    y_sum_axis = tf.math.reduce_sum(tf_binary_mask, axis=1)
+    y_min = tf.math.reduce_min(tf.where(y_sum_axis <= int(y_threshold)))
+    y_max = tf.math.reduce_max(tf.where(y_sum_axis <= int(y_threshold)))
 
-    box = [min_axis[1], min_axis[0], max_axis[1], max_axis[0]]
-    box = tf.expand_dims(tf.expand_dims(box, 0), 0)
-
-    return tf.dtypes.cast(box, dtype=tf.float32)
+    return [y_min, x_min, y_max, x_max]
 
 
-def bounding_color_area(tf_image, color_to_detect, epsilon, nb_pixel_min):
+def bounding_color_area_in_box(tf_image, color_to_detect, epsilon, nb_pixel_min):
     # Create a detection mask
     tf_color_area = color_area(tf_image, color_to_detect, epsilon)
 
