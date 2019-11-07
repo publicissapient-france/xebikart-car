@@ -20,4 +20,3 @@
   pip:
     requirements: "{{ user_directory }}/{{ app_name }}/requirements.txt"
     virtualenv: "{{ user_directory }}/env"
-

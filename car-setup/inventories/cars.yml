@@ -27,7 +27,8 @@ all:
         34313436666134313664313331326639303063343334623965636334663933306234613734643439
         3061616662323534390a363636313637613837356362313064303465346636326531303131393662
         3733
-      # network controller mac address: "B8:27:EB:85:7A:41"
+      # network controller mac address: "B8:27:EB:85:7A:41" Pi3
+      # network controller mac address: "DC:A6:32:36:16:00" Pi4
       # controller_mac_address: "40:1B:5F:77:AC:E3"
     car2:
       id: "2"
@@ -52,7 +53,8 @@ all:
         36386262393433306235333139323731653232643261613831383632666535363038616439663535
         6539613435386564620a393235396537616335646265623462303035326235383831396239663236
         3063
-      # network controller mac address: "B8:27:EB:78:31:8F"
+      # network controller mac address: "B8:27:EB:85:7A:41" Pi3
+      # network controller mac address: "DC:A6:32:36:22:D8" Pi4
       # controller_mac_address: "40:1B:5F:77:8E:13"
     car3:
       id: "3"
@@ -77,7 +79,8 @@ all:
         36386262393433306235333139323731653232643261613831383632666535363038616439663535
         6539613435386564620a393235396537616335646265623462303035326235383831396239663236
         3063
-      # network controller mac address: "B8:27:EB:3D:3B:10"
+      # network controller mac address: "B8:27:EB:3D:3B:10" Pi3
+      # network controller mac address: "DC:A6:32:36:23:C5" Pi4
       # controller_mac_address: "90:89:5F:73:0E:11"
 
   vars:
