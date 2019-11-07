@@ -20,7 +20,7 @@ import donkeycar as dk
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
 from xebikart.parts.keras import OneOutputModel
 from xebikart.parts.tflite import AsyncBufferedAction
-from xebikart.parts.image import ImageTransformation, ExtractColorBoxArea
+from xebikart.parts.image import ImageTransformation, ExtractColorAreaInBox
 from xebikart.parts.joystick import KeynoteJoystick
 from xebikart.parts.buffers import Rolling
 from xebikart.parts.driver import KeynoteDriver
@@ -101,7 +101,7 @@ def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
 
 def add_color_box_detector(vehicle, color_to_detect, camera_input, detect_model_output):
     # Get color box from image
-    detection_model = ExtractColorBoxArea(color_to_detect=color_to_detect, epsilon=30, nb_pixel_min=10)
+    detection_model = ExtractColorAreaInBox(color_to_detect=color_to_detect, epsilon=30, nb_pixel_min=10)
     vehicle.add(detection_model, inputs=[camera_input], outputs=[detect_model_output])
 
 
