@@ -48,7 +48,6 @@ class KeynoteDriver:
         self.current_mode = UserMode()
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
-
         steering, throttle = self.current_mode.run(user_steering, user_throttle, user_actions,
                                                    ai_steering, detect_box, exit_buffer, brightness_buffer)
         self.current_mode = self.current_mode.next_mode
@@ -91,23 +90,17 @@ class SafeMode(Mode):
 
 
 class EmergencyStopMode(Mode):
-    ES_START = 1
-    ES_THROTTLE_NEG_ONE = 2
-    ES_THROTTLE_POS_ONE = 3
-    ES_THROTTLE_NEG_TWO = 4
-
     def __init__(self):
         super(EmergencyStopMode, self).__init__()
         # Emergency stop sequences
         self.es_sequence = [-0.4, 0.01, -0.4, 0., 0.,
                             0., 0., 0., 0., 0., 0., 0.]
-        self.es_current_sequence = []
 
     def is_in_loop(self):
-        return len(self.es_current_sequence) > 0
+        return len(self.es_sequence) > 0
 
     def roll_emergency_stop(self):
-        throttle = self.es_current_sequence.pop(0)
+        throttle = self.es_sequence.pop(0)
         return throttle
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
@@ -127,7 +120,7 @@ class UserMode(Mode):
         }
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
-        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000:
             self.set_next_mode(EmergencyStopMode())
 
         # max_y
