@@ -89,3 +89,27 @@ def create_fix_throttle_env(vae, level=4, frame_skip=2, max_cte_error=3.0,
     fix_throttle = FixThrottle(vae_obs)
 
     return fix_throttle
+
+
+def create_basic_env(vae, level=4, frame_skip=2, max_cte_error=3.0,
+                     min_steering=-1, max_steering=1, min_throttle=0.2, max_throttle=0.4,
+                     headless=True, reward_fn=None):
+
+    from xebikart.gym.envs.donkey_env import DonkeyEnv
+    from xebikart.gym.envs.wrappers import CropObservationWrapper, ConvVariationalAutoEncoderObservationWrapper, \
+        EdgingObservationWrapper, FixThrottle
+
+    # Create donkey env
+    donkey_env = DonkeyEnv(
+      level=level, frame_skip=frame_skip, max_cte_error=max_cte_error,
+      min_steering=min_steering, max_steering=max_steering,
+      min_throttle=min_throttle, max_throttle=max_throttle,
+      headless=headless, reward_fn=reward_fn
+    )
+
+    # CropObservation
+    crop_obs = CropObservationWrapper(donkey_env, 0, 40, 160, 80)
+    # Edging
+    edging_obs = EdgingObservationWrapper(crop_obs)
+    # VAE
+    return ConvVariationalAutoEncoderObservationWrapper(edging_obs, vae)
