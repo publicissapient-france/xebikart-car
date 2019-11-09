@@ -45,7 +45,7 @@ diskutil unmountDisk /dev/diskX
 
 Connect to pi via ssh. 
 ```
-ssh pi@192.168.1.{101,102}
+ssh pi@192.168.1.{101,102,103}
 $ sudo raspi-config
 ```
 Then go to `Advanced Options` > `Expand Filesystem > Finish` and reboot.
