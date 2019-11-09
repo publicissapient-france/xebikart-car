@@ -92,14 +92,14 @@ class ReturnMode(Mode):
     def check_ai_buffers(self, exit_buffer):
         if np.sum(exit_buffer) < 0.1:
             self.road_valid_buffer.append(1)
-            if len(self.road_valid_buffer)>= 5:
+            if len(self.road_valid_buffer) >= 5:
                 self.set_next_mode(AIMode())
 
     @abstractmethod
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
         self.check_ai_buffers(exit_buffer)
-        if exit_buffer > 0.1:
+        if len(self.road_valid_buffer) < 5:
             return self.const_steering, self.const_throttle
 
 
