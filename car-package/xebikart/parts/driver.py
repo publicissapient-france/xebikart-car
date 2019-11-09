@@ -78,31 +78,22 @@ class Mode(ABC):
         raise NotImplemented
 
 
-class ReturnMode(mode):
+class ReturnMode(Mode):
     def __init__(self):
-        super(AIMode, self).__init__()
+        super(ReturnMode, self).__init__()
         self.js_actions_fn = {
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
             KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AIMode()),
         }
         self.const_throttle = 0.2
         self.const_steering = -0.2
+        self.road_valid_buffer = []
 
     def check_ai_buffers(self, exit_buffer):
         if np.sum(exit_buffer) < 0.1:
-            self.set_next_mode(AIMode())
-
-    def do_js_actions(self, actions):
-        for action in actions:
-            if action in self.js_actions_fn:
-                self.js_actions_fn[action]()
-            else:
-                print("WARN: {} action does not exist.".format(action))
-
-    def set_next_mode(self, next_mode):
-        self.next_mode = next_mode
-
-    def fn_set_next_mode(self, next_mode):
-        return lambda: self.set_next_mode(next_mode)
+            self.road_valid_buffer.append(1)
+            if len(self.road_valid_buffer)>= 5:
+                self.set_next_mode(AIMode())
 
     @abstractmethod
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
