@@ -64,11 +64,6 @@ def drive(cfg, args):
     exit_model_path = args["--exit-model"]
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/should_stop')
 
-    # Return on road model
-    print("Loading return_on_road model...")
-    return_model_path = args["--return-model"]
-    add_return_model(vehicle, return_model_path, 'cam/image_array', 'exit/should_stop')
-
     # Brightness
     print("Loading brightness detector...")
     add_brightness_detector(vehicle, 'cam/image_array', 50000, 'brightness/should_stop')
@@ -100,24 +95,6 @@ def drive(cfg, args):
         rate_hz=cfg.DRIVE_LOOP_HZ,
         max_loop_count=cfg.MAX_LOOPS
     )
-
-
-def add_return_model(vehicle, return_model_path, camera_input, should_stop_output):
-    image_transformation = ImageTransformation([
-        image_transformer.normalize,
-        image_transformer.generate_crop_fn(30, 80, 80, 30),
-        tf.image.rgb_to_grayscale
-    ])
-    vehicle.add(image_transformation, inputs=[camera_input], outputs=['return/_image'])
-    # Predict on transformed image
-    return_model = AsyncBufferedAction(model_path=return_model_path, buffer_size=4, rate_hz=4.)
-    vehicle.add(return_model, inputs=['return/_image'], outputs=['return/_buffer'], threaded=True)
-    # Sum n last predictions
-    sum_op = Sum()
-    vehicle.add(sum_op, inputs=['return/_buffer'], outputs=['return/_sum'])
-    # If sum is higher than
-    higher_than = HigherThan(threshold=1.)
-    vehicle.add(higher_than, inputs=['return/_sum'], outputs=[should_stop_output])
 
 
 def add_exit_model(vehicle, exit_model_path, camera_input, should_stop_output):
