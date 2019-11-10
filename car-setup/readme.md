@@ -61,11 +61,7 @@ Configure following options:
 2. Enable Camera: `Interfacing Options` > `Camera`
 3. Expand Filesystem: `Advanced Options` > `Expand Filesystem`
 4. Apply all changes: `Finish`
-
-Reboot pi.
-```
-sudo reboot
-```
+4. Reboot after applying changes: `Yes`
 
 ## Setup App (from Desktop)
 
@@ -118,12 +114,7 @@ To start pairing, simultaneously press **PS** and **Share** buttons for 5 second
 
 ### from Raspberry Pi
 
-After first setup, pi needs to be rebooted:
-```
-sudo reboot
-```
-
-After reboot, launch bluetooth command prompt:
+Launch bluetooth command prompt:
 ```
 sudo bluetoothctl
 ```
