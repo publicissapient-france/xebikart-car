@@ -69,7 +69,7 @@ def drive(cfg, args):
 
     # Keynote driver
     print("Loading keynote driver...")
-    driver = KeynoteDriver()
+    driver = KeynoteDriver(exit_threshold=1., brightness_threshold=50000 * 10)
     vehicle.add(driver,
                 inputs=['js/steering', 'js/throttle', 'js/actions',
                         'ai/steering', 'detect/box', 'exit/buffer', 'brightness/buffer'],

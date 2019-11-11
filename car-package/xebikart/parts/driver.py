@@ -51,11 +51,11 @@ class KeynoteDriver:
     EMERGENCY_STOP_MODE = "emergency_stop_mode"
     RETURN_MODE = "return_mode"
 
-    def __init__(self):
+    def __init__(self, exit_threshold=1., brightness_threshold=500000):
         self.mode_map = {
-            KeynoteDriver.USER_MODE: lambda: UserMode(),
-            KeynoteDriver.AI_STEERING_MODE: lambda: AISteeringMode(),
-            KeynoteDriver.AI_MODE: lambda: AIMode(),
+            KeynoteDriver.USER_MODE: lambda: UserMode(exit_threshold=exit_threshold, brightness_threshold= brightness_threshold),
+            KeynoteDriver.AI_STEERING_MODE: lambda: AISteeringMode(exit_threshold=exit_threshold, brightness_threshold= brightness_threshold),
+            KeynoteDriver.AI_MODE: lambda: AIMode(exit_threshold=exit_threshold, brightness_threshold= brightness_threshold),
             KeynoteDriver.EMERGENCY_STOP_MODE: lambda: EmergencyStopMode(),
             KeynoteDriver.SAFE_MODE: lambda: SafeMode(),
             KeynoteDriver.RETURN_MODE: lambda: ReturnMode()
@@ -157,15 +157,17 @@ class EmergencyStopMode(Mode):
 
 
 class UserMode(Mode):
-    def __init__(self):
+    def __init__(self, exit_threshold, brightness_threshold):
         super(UserMode, self).__init__()
         self.js_actions_fn = {
             KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP),
             KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(KeynoteDriver.AI_STEERING_MODE)
         }
+        self.exit_threshold = exit_threshold
+        self.brightness_threshold = brightness_threshold
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
-        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000:
+        if np.sum(exit_buffer) > self.exit_threshold or np.sum(brightness_buffer) < self.brightness_threshold:
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
         # max_y
@@ -181,15 +183,17 @@ class UserMode(Mode):
 
 
 class AISteeringMode(Mode):
-    def __init__(self):
+    def __init__(self, exit_threshold, brightness_threshold):
         super(AISteeringMode, self).__init__()
         self.js_actions_fn = {
             KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP),
             KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(KeynoteDriver.AI_MODE)
         }
+        self.exit_threshold = exit_threshold
+        self.brightness_threshold = brightness_threshold
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
-        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+        if np.sum(exit_buffer) > self.exit_threshold or np.sum(brightness_buffer) < self.brightness_threshold:
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
         # max_y
@@ -230,7 +234,7 @@ class AISteeringMode(Mode):
 
 
 class AIMode(Mode):
-    def __init__(self):
+    def __init__(self, exit_threshold, brightness_threshold):
         super(AIMode, self).__init__()
         self.js_actions_fn = {
             KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP),
@@ -238,13 +242,15 @@ class AIMode(Mode):
             KeynoteDriver.INCREASE_THROTTLE: self.fn_throttle(0.1),
             KeynoteDriver.DECREASE_THROTTLE: self.fn_throttle(-0.1)
         }
+        self.exit_threshold = exit_threshold
+        self.brightness_threshold = brightness_threshold
         self.const_throttle = 0.2
 
     def fn_throttle(self, to_add):
         return lambda: self.const_throttle + to_add
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
-        if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
+        if np.sum(exit_buffer) > self.exit_threshold or np.sum(brightness_buffer) < self.brightness_threshold:
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
         # max_y
