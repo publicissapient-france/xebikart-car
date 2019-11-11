@@ -38,7 +38,6 @@ class Mode:
 
 
 class KeynoteDriver:
-    RETURN_MODE = 'return_mode'
     EMERGENCY_STOP = "emergency_stop"
     MODE_TOGGLE = "mode_toggle"
     EXIT_SAFE_MODE = "exit_safe_mode"
@@ -50,6 +49,7 @@ class KeynoteDriver:
     AI_MODE = "ai_mode"
     AI_STEERING_MODE = "ai_steering_mode"
     EMERGENCY_STOP_MODE = "emergency_stop_mode"
+    RETURN_MODE = "return_mode"
 
     def __init__(self):
         self.mode_map = {
@@ -57,7 +57,8 @@ class KeynoteDriver:
             KeynoteDriver.AI_STEERING_MODE: lambda: AISteeringMode(),
             KeynoteDriver.AI_MODE: lambda: AIMode(),
             KeynoteDriver.EMERGENCY_STOP_MODE: lambda: EmergencyStopMode(),
-            KeynoteDriver.SAFE_MODE: lambda: SafeMode()
+            KeynoteDriver.SAFE_MODE: lambda: SafeMode(),
+            KeynoteDriver.RETURN_MODE: lambda: ReturnMode()
         }
         self.current_mode = None
         self.current_mode_str = None
@@ -105,25 +106,20 @@ class ReturnMode(Mode):
     def __init__(self):
         super(ReturnMode, self).__init__()
         self.js_actions_fn = {
-            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
-            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AIMode()),
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP)
         }
         self.const_throttle = 0.2
         self.const_steering = -0.2
-        self.road_valid_buffer = []
 
     def check_ai_buffers(self, exit_buffer):
         if np.sum(exit_buffer) < 0.1:
-            self.road_valid_buffer.append(1)
-            if len(self.road_valid_buffer) >= 5:
-                self.set_next_mode(AIMode())
+            self.set_next_mode(KeynoteDriver.AI_MODE)
 
     @abstractmethod
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
         self.check_ai_buffers(exit_buffer)
-        if len(self.road_valid_buffer) < 5:
-            return self.const_steering, self.const_throttle
+        return self.const_steering, self.const_throttle
 
 
 class SafeMode(Mode):
