@@ -45,20 +45,43 @@ class KeynoteDriver:
     INCREASE_THROTTLE = "increase_throttle"
     DECREASE_THROTTLE = "decrease_throttle"
 
+    SAFE_MODE = "safe_mode"
+    USER_MODE = "user_mode"
+    AI_MODE = "ai_mode"
+    AI_STEERING_MODE = "ai_steering_mode"
+    EMERGENCY_STOP_MODE = "emergency_stop_mode"
+
     def __init__(self):
-        self.current_mode = UserMode()
+        self.mode_map = {
+            KeynoteDriver.USER_MODE: lambda: UserMode(),
+            KeynoteDriver.AI_STEERING_MODE: lambda: AISteeringMode(),
+            KeynoteDriver.AI_MODE: lambda: AIMode(),
+            KeynoteDriver.EMERGENCY_STOP_MODE: lambda: EmergencyStopMode(),
+            KeynoteDriver.SAFE_MODE: lambda: SafeMode()
+        }
+        self.current_mode = None
+        self.current_mode_str = None
+        self.set_mode(KeynoteDriver.USER_MODE)
+
+    def set_mode(self, mode):
+        if mode in self.mode_map:
+            self.current_mode = self.mode_map[mode]()
+            self.current_mode_str = mode
+        else:
+            print(mode, "doesn't exist.")
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         steering, throttle = self.current_mode.run(user_steering, user_throttle, user_actions,
                                                    ai_steering, detect_box, exit_buffer, brightness_buffer)
-        self.current_mode = self.current_mode.next_mode
-        return steering, throttle
+        if self.current_mode.next_mode is not None:
+            self.set_mode(self.current_mode.next_mode)
+        return steering, throttle, self.current_mode_str
 
 
 class Mode(ABC):
     def __init__(self):
         self.js_actions_fn = {}
-        self.next_mode = self
+        self.next_mode = None
 
     def do_js_actions(self, actions):
         for action in actions:
@@ -107,7 +130,7 @@ class SafeMode(Mode):
     def __init__(self):
         super(SafeMode, self).__init__()
         self.js_actions_fn = {
-            KeynoteDriver.EXIT_SAFE_MODE: self.fn_set_next_mode(UserMode())
+            KeynoteDriver.EXIT_SAFE_MODE: self.fn_set_next_mode(KeynoteDriver.USER_MODE)
         }
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
@@ -133,7 +156,7 @@ class EmergencyStopMode(Mode):
         if self.is_in_loop():
             return 0., self.roll_emergency_stop()
         else:
-            self.set_next_mode(SafeMode())
+            self.set_next_mode(KeynoteDriver.SAFE_MODE)
             return 0., 0.
 
 
@@ -141,19 +164,19 @@ class UserMode(Mode):
     def __init__(self):
         super(UserMode, self).__init__()
         self.js_actions_fn = {
-            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
-            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AISteeringMode())
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP),
+            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(KeynoteDriver.AI_STEERING_MODE)
         }
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
         if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000:
-            self.set_next_mode(EmergencyStopMode())
+            self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
         # max_y
         if 75 < detect_box[2] <= 120:
             # min_x
             if 0 <= detect_box[1] < 100:
-                self.set_next_mode(EmergencyStopMode())
+                self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
@@ -165,19 +188,19 @@ class AISteeringMode(Mode):
     def __init__(self):
         super(AISteeringMode, self).__init__()
         self.js_actions_fn = {
-            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
-            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(AIMode())
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP),
+            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(KeynoteDriver.AI_MODE)
         }
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
         if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
-            self.set_next_mode(EmergencyStopMode())
+            self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
         # max_y
         if 75 < detect_box[2] <= 120:
             # min_x
             if 0 <= detect_box[1] < 100:
-                self.set_next_mode(EmergencyStopMode())
+                self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
     def change_steering_on_obstacle(self, detect_box, ai_steering):
         # max_y
@@ -214,8 +237,8 @@ class AIMode(Mode):
     def __init__(self):
         super(AIMode, self).__init__()
         self.js_actions_fn = {
-            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(EmergencyStopMode()),
-            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(UserMode()),
+            KeynoteDriver.EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP),
+            KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(KeynoteDriver.USER_MODE),
             KeynoteDriver.INCREASE_THROTTLE: self.fn_throttle(0.1),
             KeynoteDriver.DECREASE_THROTTLE: self.fn_throttle(-0.1)
         }
@@ -226,13 +249,13 @@ class AIMode(Mode):
 
     def check_ai_buffers(self, detect_box, exit_buffer, brightness_buffer):
         if np.sum(exit_buffer) > 1. or np.sum(brightness_buffer) < 500000.:
-            self.set_next_mode(EmergencyStopMode())
+            self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
         # max_y
         if 80 < detect_box[2] <= 120:
             # min_x
             if 0 <= detect_box[1] < 100:
-                self.set_next_mode(EmergencyStopMode())
+                self.set_next_mode(KeynoteDriver.EMERGENCY_STOP)
 
     def change_steering_on_obstacle(self, detect_box, ai_steering):
         # max_y

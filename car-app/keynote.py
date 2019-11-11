@@ -17,7 +17,8 @@ from docopt import docopt
 
 import donkeycar as dk
 
-from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
+from xebikart.parts import (add_throttle, add_steering, add_pi_camera, add_logger,
+                            add_publish_to_mqtt, add_imu_sensor, add_lidar_sensor)
 from xebikart.parts.keras import OneOutputModel
 from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation, ExtractColorAreaInBox
@@ -72,10 +73,28 @@ def drive(cfg, args):
     vehicle.add(driver,
                 inputs=['js/steering', 'js/throttle', 'js/actions',
                         'ai/steering', 'detect/box', 'exit/buffer', 'brightness/buffer'],
-                outputs=['pilot/steering', 'pilot/throttle'])
+                outputs=['pilot/steering', 'pilot/throttle', 'pilot/mode'])
 
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
+
+    # Add sensor
+    print("Add IMU")
+    add_imu_sensor(vehicle, cfg,
+                   car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
+                   car_tx="car/tx", car_ty="car/ty", car_tz="car/tz")
+
+    print("Add LIDAR")
+    add_lidar_sensor(vehicle, cfg,
+                     car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle")
+
+    print("Log to rabbitmq")
+    add_publish_to_mqtt(vehicle, cfg,
+                        steering_input="pilot/steering", throttle_input="pilot/throttle", mode="pilot/mode",
+                        car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle",
+                        car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
+                        car_tx="car/tx", car_ty="car/ty", car_tz="car/tz",
+                        remote_mode="remote/mode")
 
     #add_logger(vehicle, 'detect/_sum', 'detect/_sum')
     #add_logger(vehicle, 'exit/_sum', 'exit/_sum')
