@@ -90,7 +90,7 @@ def drive(cfg, args):
 def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
-        image_transformer.generate_crop_fn(30, 80, 80, 30),
+        image_transformer.generate_crop_fn(0, 40, 160, 80),
         tf.image.rgb_to_grayscale
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
