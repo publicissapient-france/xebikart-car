@@ -2,12 +2,11 @@
 
 """
 Usage:
-    record.py --save-path=<save_path> [--steps=<nb_steps>]
+    record.py --steps=<nb_steps>
 
 Options:
-    -h --help       Show this screen.
-    --save-path     Save path for archive
-    --steps         Number of steps to record
+    -h --help                   Show this screen.
+    --steps=<steps>             Number of steps to record
 """
 
 import os
@@ -20,7 +19,7 @@ import donkeycar as dk
 from donkeycar.parts.datastore import TubHandler
 
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
-from xebikart.parts.joystick import KeynoteJoystick
+from xebikart.parts.joystick import Joystick
 
 import tensorflow as tf
 
@@ -35,14 +34,14 @@ def drive(cfg, args):
     add_pi_camera(vehicle, cfg, 'cam/image_array')
 
     print("Loading joystick...")
-    joystick = KeynoteJoystick(
+    joystick = Joystick(
         throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
         steering_scale=cfg.JOYSTICK_STEERING_SCALE
     )
-    vehicle.add(joystick, outputs=['js/steering', 'js/throttle', 'js/actions'], threaded=True)
+    vehicle.add(joystick, outputs=['user/angle', 'user/throttle', 'js/actions'], threaded=True)
 
-    add_steering(vehicle, cfg, 'js/steering')
-    add_throttle(vehicle, cfg, 'js/throttle')
+    add_steering(vehicle, cfg, 'user/angle')
+    add_throttle(vehicle, cfg, 'user/throttle')
 
     print("Loading TubWriter")
     tub_handler = TubHandler("tubes/")
@@ -51,10 +50,7 @@ def drive(cfg, args):
     vehicle.add(tub_writer, inputs=['cam/image_array', 'user/angle', 'user/throttle'])
 
     # Stop car after x steps
-    vehicle.add(ExitAfterSteps(args.steps))
-
-    #add_logger(vehicle, 'detect/_sum', 'detect/_sum')
-    #add_logger(vehicle, 'exit/_sum', 'exit/_sum')
+    vehicle.add(ExitAfterSteps(int(args["--steps"])))
 
     print("Starting vehicle...")
     vehicle.start(
@@ -62,8 +58,9 @@ def drive(cfg, args):
         max_loop_count=cfg.MAX_LOOPS
     )
 
-    print(f"Create archive for run {tub_writer.path} in {args.save_path}")
-    with tarfile.open(name=args.save_path, mode='w:gz') as tar:
+    save_path = os.path.basename(tub_writer.path)
+    print(f"Create archive for run {tub_writer.path} in {save_path}.tar.gz")
+    with tarfile.open(name=f"{save_path}.tar.gz", mode='w:gz') as tar:
         tar.add(tub_writer.path, arcname=os.path.basename(tub_writer.path))
 
 
