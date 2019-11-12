@@ -18,7 +18,8 @@ from docopt import docopt
 import donkeycar as dk
 
 from xebikart.parts import (add_throttle, add_steering, add_pi_camera, add_logger,
-                            add_publish_to_mqtt, add_imu_sensor, add_lidar_sensor)
+                            add_mqtt_image_base64_publisher, add_mqtt_metadata_publisher, add_mqtt_remote_mode_subscriber,
+                            add_imu_sensor, add_lidar_sensor)
 from xebikart.parts.keras import OneOutputModel
 from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation, ExtractColorAreaInBox
@@ -89,15 +90,16 @@ def drive(cfg, args):
     #                 car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle")
 
     print("Log to rabbitmq")
-    add_publish_to_mqtt(vehicle, cfg,
-                        steering_input="pilot/steering", throttle_input="pilot/throttle", mode="pilot/mode",
-                        car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle",
-                        car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
-                        car_tx="car/tx", car_ty="car/ty", car_tz="car/tz",
-                        remote_mode="remote/mode")
+    add_mqtt_image_base64_publisher(vehicle, cfg, 'cam/image_array')
+    add_mqtt_metadata_publisher(vehicle, cfg,
+                                steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode",
+                                car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle",
+                                car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
+                                car_tx="car/tx", car_ty="car/ty", car_tz="car/tz")
+    add_mqtt_remote_mode_subscriber(vehicle, cfg, 'mqtt/mode')
 
     #add_logger(vehicle, 'detect/_sum', 'detect/_sum')
-    #add_logger(vehicle, 'exit/_sum', 'exit/_sum')
+    #add_logger(vehicle, 'mqtt/mode', 'mqtt/mode')
 
     print("Starting vehicle...")
     vehicle.start(
