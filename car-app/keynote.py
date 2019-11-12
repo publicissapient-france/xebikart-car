@@ -60,7 +60,7 @@ def drive(cfg, args):
 
     # Detect color boxes
     print("Loading color boxes detector...")
-    color_to_detect = args["--color"].split(",")
+    color_to_detect = [int(v) for v in args["--color"].split(",")]
     add_color_box_detector(vehicle, color_to_detect, 'cam/image_array', 'detect/box')
 
     # Brightness
@@ -79,14 +79,14 @@ def drive(cfg, args):
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
     # Add sensor
-    print("Add IMU")
-    add_imu_sensor(vehicle, cfg,
-                   car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
-                   car_tx="car/tx", car_ty="car/ty", car_tz="car/tz")
+    #print("Add IMU")
+    #add_imu_sensor(vehicle, cfg,
+    #               car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
+    #               car_tx="car/tx", car_ty="car/ty", car_tz="car/tz")
 
-    print("Add LIDAR")
-    add_lidar_sensor(vehicle, cfg,
-                     car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle")
+    #print("Add LIDAR")
+    #add_lidar_sensor(vehicle, cfg,
+    #                 car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle")
 
     print("Log to rabbitmq")
     add_publish_to_mqtt(vehicle, cfg,
