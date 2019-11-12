@@ -175,11 +175,11 @@ class UserMode(Mode):
         if np.sum(exit_buffer) > self.exit_threshold or np.sum(brightness_buffer) < self.brightness_threshold:
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
+        x = detect_box[1]
+        y = detect_box[2]
         # max_y
-        if 50 < detect_box[2] <= 120:
-            # min_x
-            if 0 <= detect_box[1] < 100:
-                self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
+        if 50 < y <= 120 and 0 <= x < 100:
+            self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
@@ -201,11 +201,11 @@ class AISteeringMode(Mode):
         if np.sum(exit_buffer) > self.exit_threshold or np.sum(brightness_buffer) < self.brightness_threshold:
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
+        x = detect_box[1]
+        y = detect_box[2]
         # max_y
-        if 50 < detect_box[2] <= 120:
-            # min_x
-            if 0 <= detect_box[1] < 100:
-                self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
+        if 50 < y <= 120 and 0 <= x < 100:
+            self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
         self.do_js_actions(user_actions)
@@ -224,7 +224,7 @@ class AIMode(Mode):
         }
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.const_throttle = 0.18
+        self.const_throttle = 0.22
 
     def fn_throttle(self, to_add):
         def _set_throttle():
@@ -239,7 +239,9 @@ class AIMode(Mode):
         self.do_js_actions(user_actions)
         self.check_ai_buffers(exit_buffer, brightness_buffer)
         # if obstacle 40 < max_y <= 120
-        if 40 < detect_box[2] <= 120:
+        x = detect_box[1]
+        y = detect_box[2]
+        if 40 < x < 80 and 45 < y < 80:
             self.set_next_mode(KeynoteDriver.TAKEOVER_MODE)
         return ai_steering, self.const_throttle
 
@@ -247,48 +249,13 @@ class AIMode(Mode):
 class TakeoverMode(Mode):
     def __init__(self):
         super(TakeoverMode, self).__init__()
-        self.history = []
-        self.back_to_track = [-0.2, -0.2]
-        self.has_pass_object = False
-        self.const_throttle = 0.18
-
-    def get_steering_on_obstacle(self, detect_box):
-        # max_y
-        if 40 < detect_box[2] <= 60:
-            # min_x
-            if 0 <= detect_box[1] < 40:
-                return -0.3
-            elif 40 <= detect_box[1] < 80:
-                return -0.2
-            elif 80 <= detect_box[1] < 120:
-                return -0.1
-        if 60 < detect_box[2] <= 120:
-            # min_x
-            if 0 <= detect_box[1] < 40:
-                return -0.6
-            elif 40 <= detect_box[1] < 80:
-                return -0.4
-            elif 80 <= detect_box[1] < 120:
-                return -0.2
-        return None
+        self.const_throttle = 0.20
+        self.sequence = ([-1.] * 15) + ([0.5] * 15)
 
     def run(self, user_steering, user_throttle, user_actions, ai_steering, detect_box, exit_buffer, brightness_buffer):
-        if self.has_pass_object is False:
-            print("overtake")
-            overtake_steering = self.get_steering_on_obstacle(detect_box)
-            if overtake_steering is not None:
-                self.history.append(overtake_steering)
-                return overtake_steering, self.const_throttle
-            else:
-                self.has_pass_object = True
-                return 0., self.const_throttle
+        if len(self.sequence) > 0:
+            steering = self.sequence.pop(0)
+            return steering, self.const_throttle
         else:
-            if len(self.history) > 0:
-                steering = self.history.pop()
-                return -1. * steering, self.const_throttle
-            elif len(self.back_to_track) > 0:
-                steering = self.back_to_track.pop()
-                return steering, self.const_throttle
-            else:
-                self.set_next_mode(KeynoteDriver.AI_MODE)
-                return 0., self.const_throttle
+            self.set_next_mode(KeynoteDriver.AI_MODE)
+            return 0., self.const_throttle
