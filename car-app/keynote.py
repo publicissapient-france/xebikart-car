@@ -8,7 +8,7 @@ Options:
     -h --help                    Show this screen.
     --steering-model=<path>      Path to h5 model (steering only) (.h5)
     --exit-model=<path>          Path to tflite model (exit) (.tflite)
-    --color=<color>              Color to detect in picture [default: 245,152,66]
+    --color=<color>              Color to detect in picture [default: 187,133,101]
     --throttle=<throttle>        Fix throttle [default: 0.2]
 """
 
