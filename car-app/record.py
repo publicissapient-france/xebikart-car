@@ -59,8 +59,8 @@ def drive(cfg, args):
     )
 
     save_path = os.path.basename(tub_writer.path)
-    print(f"Create archive for run {tub_writer.path} in {save_path}.tar.gz")
-    with tarfile.open(name=f"{save_path}.tar.gz", mode='w:gz') as tar:
+    print("Create archive for run {} in {}.tar.gz".format(tub_writer.path, save_path))
+    with tarfile.open(name="{}.tar.gz".format(save_path), mode='w:gz') as tar:
         tar.add(tub_writer.path, arcname=os.path.basename(tub_writer.path))
 
 
