@@ -1,5 +1,10 @@
 from xebikart.images import detect
 
+from PIL import Image
+from io import BytesIO
+import base64
+import numpy as np
+
 
 class ImageTransformation:
     def __init__(self, transformations_fn):
@@ -36,3 +41,12 @@ class ExtractColorAreaInBox:
 
     def run(self, img_arr):
         return detect.bounding_color_area_in_box(img_arr, self.color_to_detect, self.epsilon, self.nb_pixel_min)
+
+
+class EncodeToBase64:
+    def run(self, img_arr):
+        img = Image.fromarray(np.uint8(img_arr))
+        bytes = BytesIO()
+        img.save(bytes, format='jpeg')
+        frame = bytes.getvalue()
+        return base64.b64encode(frame)
