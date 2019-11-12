@@ -111,7 +111,7 @@ class ReturnMode(Mode):
         self.js_actions_fn = {
             KeynoteDriver.TRIGGER_EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
         }
-        self.const_throttle = 0.15
+        self.const_throttle = 0.20
         self.const_steering = -0.10
 
     def check_ai_buffers(self, exit_buffer):
@@ -174,7 +174,7 @@ class UserMode(Mode):
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
         # max_y
-        if 60 < detect_box[2] <= 120:
+        if 0 < detect_box[2] <= 120:
             # min_x
             if 0 <= detect_box[1] < 100:
                 self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
@@ -200,14 +200,14 @@ class AISteeringMode(Mode):
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
         # max_y
-        if 75 < detect_box[2] <= 120:
+        if 70 < detect_box[2] <= 120:
             # min_x
             if 0 <= detect_box[1] < 100:
                 self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
     def change_steering_on_obstacle(self, detect_box, ai_steering):
         # max_y
-        if 40 < detect_box[2] <= 60:
+        if 0 < detect_box[2] <= 60:
             # min_x
             if 0 <= detect_box[1] < 40:
                 return -0.8
@@ -242,12 +242,12 @@ class AIMode(Mode):
         self.js_actions_fn = {
             KeynoteDriver.TRIGGER_EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE),
             KeynoteDriver.MODE_TOGGLE: self.fn_set_next_mode(KeynoteDriver.USER_MODE),
-            KeynoteDriver.INCREASE_THROTTLE: self.fn_throttle(0.05),
-            KeynoteDriver.DECREASE_THROTTLE: self.fn_throttle(-0.05)
+            KeynoteDriver.INCREASE_THROTTLE: self.fn_throttle(0.02),
+            KeynoteDriver.DECREASE_THROTTLE: self.fn_throttle(-0.02)
         }
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.const_throttle = 0.15
+        self.const_throttle = 0.20
 
     def fn_throttle(self, to_add):
         return lambda: self.const_throttle + to_add
@@ -257,14 +257,14 @@ class AIMode(Mode):
             self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
         # max_y
-        if 80 < detect_box[2] <= 120:
+        if 70 < detect_box[2] <= 120:
             # min_x
             if 0 <= detect_box[1] < 100:
                 self.set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
 
     def change_steering_on_obstacle(self, detect_box, ai_steering):
         # max_y
-        if 40 < detect_box[2] <= 60:
+        if 0 < detect_box[2] <= 60:
             # min_x
             if 0 <= detect_box[1] < 40:
                 return -0.8
