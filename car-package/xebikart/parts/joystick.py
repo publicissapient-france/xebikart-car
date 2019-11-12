@@ -44,3 +44,5 @@ class KeynoteJoystick(Joystick):
         self.add_trigger_action('square', KeynoteDriver.TRIGGER_EXIT_SAFE_MODE)
         self.add_trigger_action('circle', KeynoteDriver.TRIGGER_RETURN_MODE)
         self.add_trigger_action('select', KeynoteDriver.MODE_TOGGLE)
+        self.add_trigger_action('R1', KeynoteDriver.INCREASE_THROTTLE)
+        self.add_trigger_action('L1', KeynoteDriver.DECREASE_THROTTLE)
