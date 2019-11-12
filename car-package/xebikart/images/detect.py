@@ -28,7 +28,7 @@ def bounding_shape_in_box(tf_binary_mask, nb_pixel_min):
     y_min = tf.math.reduce_min(tf.where(y_sum_axis <= int(y_threshold)))
     y_max = tf.math.reduce_max(tf.where(y_sum_axis <= int(y_threshold)))
 
-    return [y_min, x_min, y_max, x_max]
+    return [y_min.numpy().item(), x_min.numpy().item(), y_max.numpy().item(), x_max.numpy().item()]
 
 
 def bounding_color_area_in_box(tf_image, color_to_detect, epsilon, nb_pixel_min):
