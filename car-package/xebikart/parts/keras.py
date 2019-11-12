@@ -8,7 +8,7 @@ class OneOutputModel(KerasLinear):
         img_arr = tf.expand_dims(img_arr, axis=0)
         prediction_outputs = self.model.predict(img_arr)
         prediction_output = tf.squeeze(prediction_outputs, axis=0)
-        prediction = prediction_output[0]
+        prediction = prediction_output[0].numpy().item()
         return prediction
 
 
@@ -17,6 +17,6 @@ class PilotModel(KerasLinear):
         img_arr = tf.expand_dims(img_arr, axis=0)
         pilot_prediction = self.model.predict(img_arr)
         pilot_prediction = tf.squeeze(pilot_prediction, axis=0)
-        steering = pilot_prediction[0]
-        throttle = pilot_prediction[1]
+        steering = pilot_prediction[0].numpy().item()
+        throttle = pilot_prediction[1].numpy().item()
         return steering, throttle
