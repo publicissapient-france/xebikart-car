@@ -113,7 +113,7 @@ class ReturnMode(Mode):
         self.js_actions_fn = {
             KeynoteDriver.TRIGGER_EMERGENCY_STOP: self.fn_set_next_mode(KeynoteDriver.EMERGENCY_STOP_MODE)
         }
-        self.const_throttle = 0.20
+        self.const_throttle = 0.18
         self.const_steering = -0.10
 
     def check_ai_buffers(self, exit_buffer):
@@ -224,7 +224,7 @@ class AIMode(Mode):
         }
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.const_throttle = 0.15
+        self.const_throttle = 0.18
 
     def fn_throttle(self, to_add):
         def _set_throttle():
@@ -248,9 +248,9 @@ class TakeoverMode(Mode):
     def __init__(self):
         super(TakeoverMode, self).__init__()
         self.history = []
-        self.back_to_track = [-0.2, -0.2, -0.2, -0.2, -0.2]
+        self.back_to_track = [-0.2, -0.2]
         self.has_pass_object = False
-        self.const_throttle = 0.2
+        self.const_throttle = 0.18
 
     def get_steering_on_obstacle(self, detect_box):
         # max_y
@@ -285,9 +285,8 @@ class TakeoverMode(Mode):
         else:
             if len(self.history) > 0:
                 steering = self.history.pop()
-                print("redo", -2. * steering)
-                return -2. * steering, self.const_throttle
-            elif len(self.back_to_track):
+                return -1. * steering, self.const_throttle
+            elif len(self.back_to_track) > 0:
                 steering = self.back_to_track.pop()
                 return steering, self.const_throttle
             else:
