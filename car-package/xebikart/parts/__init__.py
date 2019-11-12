@@ -34,6 +34,44 @@ def add_publish_to_mqtt(vehicle, cfg,
     )
 
 
+def add_mqtt_image_base64_publisher(vehicle, cfg, camera_input):
+    from xebikart.parts.mqtt import RawMQTTPublisher
+    from xebikart.parts.image import EncodeToBase64
+
+    encoder = EncodeToBase64()
+    publisher = RawMQTTPublisher(cfg=cfg, topic=cfg.RABIITMQ_VIDEO_TOPIC)
+    vehicle.add(encoder, inputs=[camera_input], outputs=["encoder/base64"])
+    vehicle.add(publisher, inputs=["encoder/base64"], threaded=True)
+
+
+def add_mqtt_metadata_publisher(vehicle, cfg,
+                                steering="user/angle", throttle="user/throttle", mode="user/mode",
+                                car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle",
+                                car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
+                                car_tx="car/tx", car_ty="car/ty", car_tz="car/tz",
+                                ):
+    from xebikart.parts.mqtt import MetadataMQTTPublisher
+
+    mqtt_client = MetadataMQTTPublisher(cfg.CAR_ID, cfg=cfg, topic=cfg.RABBITMQ_TOPIC)
+    vehicle.add(
+        mqtt_client,
+        inputs=[
+            mode, steering, throttle,
+            car_x, car_y, car_z, car_angle,
+            car_dx, car_dy, car_dz,
+            car_tx, car_ty, car_tz
+        ],
+        threaded=True
+    )
+
+
+def add_mqtt_remote_mode_subscriber(vehicle, cfg, remote_mode):
+    from xebikart.parts.mqtt import RemoteModeMQTTSubscriber
+
+    mqtt_client = RemoteModeMQTTSubscriber(cfg.CAR_ID, cfg=cfg, topic=cfg.RABBITMQ_TOPIC + "/cars/" + str(cfg.CAR_ID))
+    vehicle.add(mqtt_client, outputs=[remote_mode])
+
+
 def add_imu_sensor(vehicle, cfg,
                    car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
                    car_tx="car/tx", car_ty="car/ty", car_tz="car/tz"):
