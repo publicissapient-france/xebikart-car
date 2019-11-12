@@ -79,7 +79,7 @@ def drive(cfg, model_path=None):
         run_condition='run_pilot'
     )
 
-    driver = Driver()
+    driver = Driver(cfg)
     vehicle.add(
         driver,
         inputs=[
@@ -184,7 +184,7 @@ def drive(cfg, model_path=None):
         run_condition='recording'
     )
 
-    mqtt_client = MQTTClient()
+    mqtt_client = MQTTClient(cfg)
     vehicle.add(
         mqtt_client,
         inputs=[

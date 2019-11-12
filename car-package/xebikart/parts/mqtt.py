@@ -3,23 +3,22 @@ import time
 import paho.mqtt.client as mqtt
 import logging
 
-import config
-
 
 class MQTTClient:
 
-    def __init__(self, publish_delay=1):
+    def __init__(self, cfg, publish_delay=1):
         self.publish_delay = publish_delay
 
         self.client = mqtt.Client()
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.on_publish = self.on_publish
-        self.client.username_pw_set(username=config.RABBITMQ_USERNAME, password=config.RABBITMQ_PASSWORD)
-        self.client.connect(config.RABBITMQ_HOST, config.RABBITMQ_PORT, 60)
+        self.client.username_pw_set(username=cfg.RABBITMQ_USERNAME, password=cfg.RABBITMQ_PASSWORD)
+        self.client.connect(cfg.RABBITMQ_HOST, cfg.RABBITMQ_PORT, 60)
         self.client.loop_start()
-        self.client.subscribe(config.RABBITMQ_TOPIC + "/cars/" + str(config.CAR_ID))
+        self.client.subscribe(cfg.RABBITMQ_TOPIC + "/cars/" + str(cfg.CAR_ID))
 
+        self.cfg = cfg
         self.running = True
         self.output_payload = None
         self.input_payload = None
@@ -34,7 +33,7 @@ class MQTTClient:
         try:
             text_payload = msg.payload.decode("UTF-8")
             dict_payload = json.loads(text_payload)
-            if 'mode' in dict_payload and 'car' in dict_payload and dict_payload['car'] == config.CAR_ID:
+            if 'mode' in dict_payload and 'car' in dict_payload and dict_payload['car'] == self.cfg.CAR_ID:
                 self.input_payload['mode'] = dict_payload['mode']
         except Exception as e:
             logging.error("Error when processing message", e)
@@ -46,7 +45,7 @@ class MQTTClient:
         while self.running:
             if self.output_payload is not None:
                 try:
-                    self.client.publish(config.RABBITMQ_TOPIC, json.dumps(self.output_payload))
+                    self.client.publish(self.cfg.RABBITMQ_TOPIC, json.dumps(self.output_payload))
                     time.sleep(self.publish_delay)
                 except Exception as e:
                     logging.error("Error when publishing message", e)
@@ -59,7 +58,7 @@ class MQTTClient:
             dx, dy, dz, tx, ty, tz  # from imu
     ):
         self.output_payload = {
-            'car': config.CAR_ID,
+            'car': self.cfg.CAR_ID,
             'mode': mode,
             'user': {
                 "angle": user_angle,

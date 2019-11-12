@@ -1,3 +1,11 @@
+from xebikart.images import detect
+
+from PIL import Image
+from io import BytesIO
+import base64
+import numpy as np
+
+
 class ImageTransformation:
     def __init__(self, transformations_fn):
         self.transformations_fn = transformations_fn
@@ -23,3 +31,22 @@ class TFSessImageTransformation:
 
     def run(self, img_arr):
         return self.sess.run(self.output, {self.input: img_arr})
+
+
+class ExtractColorAreaInBox:
+    def __init__(self, color_to_detect, epsilon, nb_pixel_min):
+        self.color_to_detect = color_to_detect
+        self.epsilon = epsilon
+        self.nb_pixel_min = nb_pixel_min
+
+    def run(self, img_arr):
+        return detect.bounding_color_area_in_box(img_arr, self.color_to_detect, self.epsilon, self.nb_pixel_min)
+
+
+class EncodeToBase64:
+    def run(self, img_arr):
+        img = Image.fromarray(np.uint8(img_arr))
+        bytes = BytesIO()
+        img.save(bytes, format='jpeg')
+        frame = bytes.getvalue()
+        return base64.b64encode(frame)
