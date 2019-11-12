@@ -25,7 +25,7 @@ from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation, ExtractColorAreaInBox
 from xebikart.parts.joystick import KeynoteJoystick
 from xebikart.parts.buffers import Rolling
-from xebikart.parts.driver import KeynoteDriver
+from xebikart.parts.driver import KeynoteDriverV2
 
 import xebikart.images.transformer as image_transformer
 
@@ -48,29 +48,20 @@ def drive(cfg, args):
     )
     vehicle.add(joystick, outputs=['js/steering', 'js/throttle', 'js/actions'], threaded=True)
 
-    # Steering model
-    print("Loading steering model...")
-    steering_model_path = args["--steering-model"]
-    throttle = args["--throttle"]
-    add_steering_model(vehicle, steering_model_path, 'cam/image_array', 'ai/steering')
-
-    # Exit model
-    print("Loading exit model...")
-    exit_model_path = args["--exit-model"]
-    add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/buffer')
-
     # Detect color boxes
     print("Loading color boxes detector...")
     color_to_detect = [int(v) for v in args["--color"].split(",")]
     add_color_box_detector(vehicle, color_to_detect, 'cam/image_array', 'detect/box')
 
-    # Brightness
-    print("Loading brightness detector...")
-    add_brightness_detector(vehicle, 'cam/image_array', 'brightness/buffer')
+    # Steering model
+    print("Loading steering model...")
+    steering_model_path = args["--model"]
+    add_steering_model(vehicle, steering_model_path, 'cam/image_array', 'detect/box', 'ai/steering')
 
     # Keynote driver
     print("Loading keynote driver...")
-    driver = KeynoteDriver(exit_threshold=1., brightness_threshold=50000 * 10)
+    throttle = args["--throttle"]
+    driver = KeynoteDriverV2()
     vehicle.add(driver,
                 inputs=['js/steering', 'js/throttle', 'js/actions',
                         'ai/steering', 'detect/box', 'exit/buffer', 'brightness/buffer'],
@@ -107,26 +98,13 @@ def drive(cfg, args):
         max_loop_count=cfg.MAX_LOOPS
     )
 
-
-def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
-    image_transformation = ImageTransformation([
-        image_transformer.normalize,
-        image_transformer.generate_crop_fn(0, 40, 160, 80),
-        tf.image.rgb_to_grayscale
-    ])
-    vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
-    # Predict on transformed image
-    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=4.)
-    vehicle.add(exit_model, inputs=['exit/_image'], outputs=[exit_model_output], threaded=True)
-
-
 def add_color_box_detector(vehicle, color_to_detect, camera_input, detect_model_output):
     # Get color box from image
     detection_model = ExtractColorAreaInBox(color_to_detect=color_to_detect, epsilon=30, nb_pixel_min=10)
     vehicle.add(detection_model, inputs=[camera_input], outputs=[detect_model_output])
 
 
-def add_steering_model(vehicle, steering_path, camera_input, steering_model_output):
+def add_steering_model(vehicle, steering_path, camera_input, box_detection_input, steering_model_output):
     image_transformation = ImageTransformation([
         image_transformer.normalize,
         image_transformer.generate_crop_fn(0, 40, 160, 80),
@@ -137,17 +115,6 @@ def add_steering_model(vehicle, steering_path, camera_input, steering_model_outp
     steering_model = OneOutputModel()
     steering_model.load(steering_path)
     vehicle.add(steering_model, inputs=['ai/_image'], outputs=[steering_model_output])
-
-
-def add_brightness_detector(vehicle, camera_input, brightness_output):
-    image_transformation = ImageTransformation([
-        lambda x: tf.dtypes.cast(x, "int32"),
-        tf.math.reduce_sum
-    ])
-    vehicle.add(image_transformation, inputs=[camera_input], outputs=['brightness/_reduce'])
-    # Rolling buffer n last predictions
-    buffer = Rolling(buffer_size=10)
-    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=[brightness_output])
 
 
 if __name__ == '__main__':

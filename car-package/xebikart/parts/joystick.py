@@ -1,5 +1,4 @@
 from donkeypart_ps3_controller import PS3JoystickController
-from xebikart.parts.driver import KeynoteDriver
 
 
 class Joystick(PS3JoystickController):
@@ -40,9 +39,18 @@ class KeynoteJoystick(Joystick):
 
     def __init__(self, *args, **kwargs):
         super(KeynoteJoystick, self).__init__(*args, **kwargs)
-        self.add_trigger_action('cross', KeynoteDriver.TRIGGER_EMERGENCY_STOP)
-        self.add_trigger_action('square', KeynoteDriver.TRIGGER_EXIT_SAFE_MODE)
-        self.add_trigger_action('circle', KeynoteDriver.TRIGGER_RETURN_MODE)
-        self.add_trigger_action('select', KeynoteDriver.MODE_TOGGLE)
-        self.add_trigger_action('R1', KeynoteDriver.INCREASE_THROTTLE)
-        self.add_trigger_action('L1', KeynoteDriver.DECREASE_THROTTLE)
+        self.add_trigger_action('cross', KeynoteAction.TRIGGER_EMERGENCY_STOP)
+        self.add_trigger_action('square', KeynoteAction.TRIGGER_EXIT_SAFE_MODE)
+        self.add_trigger_action('circle', KeynoteAction.TRIGGER_RETURN_MODE)
+        self.add_trigger_action('select', KeynoteAction.MODE_TOGGLE)
+        self.add_trigger_action('R1', KeynoteAction.INCREASE_THROTTLE)
+        self.add_trigger_action('L1', KeynoteAction.DECREASE_THROTTLE)
+
+
+class KeynoteAction:
+    TRIGGER_EMERGENCY_STOP = "emergency_stop"
+    TRIGGER_EXIT_SAFE_MODE = "exit_safe_mode"
+    TRIGGER_RETURN_MODE = "active_return_mode"
+    MODE_TOGGLE = "mode_toggle"
+    INCREASE_THROTTLE = "increase_throttle"
+    DECREASE_THROTTLE = "decrease_throttle"
