@@ -21,7 +21,6 @@ from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
-from xebikart.parts.driver import Driver
 from xebikart.parts.lidar import RPLidar, BreezySLAM
 from xebikart.parts.imu import Mpu6050
 from xebikart.parts.mqtt import MQTTClient
@@ -212,6 +211,24 @@ def drive(cfg, model_path=None):
         rate_hz=cfg.DRIVE_LOOP_HZ,
         max_loop_count=cfg.MAX_LOOPS
     )
+
+class Driver:
+
+    def __init__(self, config):
+        self.config = config
+
+    def run(
+            self,
+            mode,
+            user_angle, user_throttle,  # from controller
+            pilot_angle, pilot_throttle,  # from ML model
+            x, y, z, angle,  # from lidar
+            dx, dy, dz, tx, ty, tz  # from imu
+    ):
+        if mode == 'user':
+            return user_angle, user_throttle, True, self.config.IMU_ENABLED, self.config.LIDAR_ENABLED
+        else:
+            return pilot_angle, pilot_throttle, False, self.config.IMU_ENABLED, self.config.LIDAR_ENABLED
 
 
 if __name__ == '__main__':

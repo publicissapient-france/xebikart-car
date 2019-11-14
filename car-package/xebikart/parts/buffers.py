@@ -11,7 +11,3 @@ class Rolling:
         self.buffer[0] = input
         return self.buffer
 
-
-class Sum:
-    def run(self, input_buffer):
-        return np.sum(input_buffer)

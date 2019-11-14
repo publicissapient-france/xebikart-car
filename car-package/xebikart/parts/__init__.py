@@ -1,50 +1,17 @@
 from donkeycar.parts.transform import Lambda
 
 
-def add_publish_to_mqtt(vehicle, cfg,
-                        steering_input, throttle_input, mode="user/mode",
-                        car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle",
-                        car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
-                        car_tx="car/tx", car_ty="car/ty", car_tz="car/tz",
-                        remote_mode="remote/mode"):
-    from xebikart.parts.mqtt import MQTTClient
-
-    mqtt_client = MQTTClient(cfg)
-    vehicle.add(
-        mqtt_client,
-        inputs=[
-            mode,
-            steering_input,
-            throttle_input,
-            car_x,
-            car_y,
-            car_z,
-            car_angle,
-            car_dx,
-            car_dy,
-            car_dz,
-            car_tx,
-            car_ty,
-            car_tz
-        ],
-        outputs=[
-            remote_mode
-        ],
-        threaded=True
-    )
-
-
-def add_mqtt_image_base64_publisher(vehicle, cfg, camera_input):
+def add_mqtt_image_base64_publisher(vehicle, cfg, topic, camera_input):
     from xebikart.parts.mqtt import RawMQTTPublisher
     from xebikart.parts.image import EncodeToBase64
 
     encoder = EncodeToBase64()
-    publisher = RawMQTTPublisher(cfg=cfg, topic=cfg.RABIITMQ_VIDEO_TOPIC)
+    publisher = RawMQTTPublisher(cfg=cfg, topic=topic)
     vehicle.add(encoder, inputs=[camera_input], outputs=["encoder/base64"])
     vehicle.add(publisher, inputs=["encoder/base64"], threaded=True)
 
 
-def add_mqtt_metadata_publisher(vehicle, cfg,
+def add_mqtt_metadata_publisher(vehicle, cfg, topic, car_id,
                                 steering="user/angle", throttle="user/throttle", mode="user/mode",
                                 car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle",
                                 car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
@@ -52,7 +19,7 @@ def add_mqtt_metadata_publisher(vehicle, cfg,
                                 ):
     from xebikart.parts.mqtt import MetadataMQTTPublisher
 
-    mqtt_client = MetadataMQTTPublisher(cfg.CAR_ID, cfg=cfg, topic=cfg.RABBITMQ_TOPIC)
+    mqtt_client = MetadataMQTTPublisher(car_id, cfg=cfg, topic=topic)
     vehicle.add(
         mqtt_client,
         inputs=[
@@ -65,10 +32,10 @@ def add_mqtt_metadata_publisher(vehicle, cfg,
     )
 
 
-def add_mqtt_remote_mode_subscriber(vehicle, cfg, remote_mode):
+def add_mqtt_remote_mode_subscriber(vehicle, cfg, topic, car_id, remote_mode):
     from xebikart.parts.mqtt import RemoteModeMQTTSubscriber
 
-    mqtt_client = RemoteModeMQTTSubscriber(cfg.CAR_ID, cfg=cfg, topic=cfg.RABBITMQ_TOPIC + "/cars/" + str(cfg.CAR_ID))
+    mqtt_client = RemoteModeMQTTSubscriber(car_id, cfg=cfg, topic=topic)
     vehicle.add(mqtt_client, outputs=[remote_mode])
 
 
@@ -92,8 +59,7 @@ def add_imu_sensor(vehicle, cfg,
     )
 
 
-def add_lidar_sensor(vehicle, cfg,
-                     car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle"):
+def add_lidar_sensor(vehicle, cfg, car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle"):
     from xebikart.parts.lidar import RPLidar, BreezySLAM
 
     lidar = RPLidar()
@@ -117,141 +83,6 @@ def add_lidar_sensor(vehicle, cfg,
             car_y,
             car_z,
             car_angle
-        ]
-    )
-
-
-def add_sensors(vehicle, cfg):
-    from xebikart.parts.lidar import RPLidar, BreezySLAM
-    from xebikart.parts.imu import Mpu6050
-
-    is_imu_enabled_lb = Lambda(lambda: cfg.IMU_ENABLED)
-    vehicle.add(
-        is_imu_enabled_lb,
-        outputs=[
-            'imu_enabled'
-        ]
-    )
-    is_lidar_enabled_lb = Lambda(lambda: cfg.LIDAR_ENABLED)
-    vehicle.add(
-        is_lidar_enabled_lb,
-        outputs=[
-            'lidar_enabled'
-        ]
-    )
-
-    imu = Mpu6050()
-    vehicle.add(
-        imu,
-        outputs=[
-            'car/dx',
-            'car/dy',
-            'car/dz',
-            'car/tx',
-            'car/ty',
-            'car/tz'
-        ],
-        threaded=True,
-        run_condition='imu_enabled'
-    )
-    lidar = RPLidar()
-    vehicle.add(
-        lidar,
-        outputs=[
-            'lidar/distances',
-            'lidar/angles'
-        ],
-        threaded=True,
-        run_condition='lidar_enabled'
-    )
-    breezy_slam = BreezySLAM()
-    vehicle.add(
-        breezy_slam,
-        inputs=[
-            'lidar/distances',
-            'lidar/angles'
-        ],
-        outputs=[
-            'car/x',
-            'car/y',
-            'car/z',
-            'car/angle',
-        ],
-        run_condition='lidar_enabled'
-    )
-
-
-def add_controller(vehicle, cfg, user_steering_output, user_throttle_output, user_mode_output, recording_output):
-    from donkeypart_ps3_controller import PS3JoystickController
-    controller = PS3JoystickController(
-        throttle_scale=cfg.JOYSTICK_MAX_THROTTLE,
-        steering_scale=cfg.JOYSTICK_STEERING_SCALE,
-        auto_record_on_throttle=cfg.AUTO_RECORD_ON_THROTTLE
-    )
-    vehicle.add(
-        controller,
-        outputs=[
-            user_steering_output,
-            user_throttle_output,
-            user_mode_output,
-            recording_output
-        ],
-        threaded=True
-    )
-
-
-def add_pilot(vehicle, mode_input,
-              user_steering_input, user_throttle_input,
-              ai_steering_input, ai_throttle_input,
-              steering_output, throttle_output):
-
-    def _pilot(mode, user_steering, user_throttle, ai_steering, ai_throttle):
-        if mode == 'user':
-            return user_steering, user_throttle
-        elif mode == 'local_angle':
-            return ai_steering, user_throttle
-        elif mode == 'local':
-            return ai_steering, ai_throttle
-        else:
-            return 0., 0.
-
-    decision_lb = Lambda(_pilot)
-    vehicle.add(
-        decision_lb,
-        inputs=[
-            mode_input,
-            user_steering_input,
-            user_throttle_input,
-            ai_steering_input,
-            ai_throttle_input
-        ],
-        outputs=[
-            steering_output,
-            throttle_output
-        ]
-    )
-
-
-def add_pilot_emergency_exit(vehicle, user_steering_input, user_throttle_input,
-                             ai_condition_output, steering_output, throttle_output):
-
-    def _pilot(ai_condition, user_steering, user_throttle):
-        if ai_condition:
-            return 0., 0.
-        else:
-            return user_steering, user_throttle
-
-    decision_lb = Lambda(_pilot)
-    vehicle.add(
-        decision_lb,
-        inputs=[
-            ai_condition_output,
-            user_steering_input,
-            user_throttle_input
-        ],
-        outputs=[
-            steering_output,
-            throttle_output
         ]
     )
 
@@ -322,3 +153,26 @@ def add_pi_camera(vehicle, cfg, camera_output):
         ],
         threaded=True
     )
+
+
+def add_brightness_detector(vehicle, buffer_size, camera_input, brightness_output):
+    from xebikart.parts.image import ImageTransformation
+    from xebikart.parts.buffers import Rolling
+    import tensorflow as tf
+
+    image_transformation = ImageTransformation([
+        lambda x: tf.dtypes.cast(x, "int32"),
+        tf.math.reduce_sum
+    ])
+    vehicle.add(image_transformation, inputs=[camera_input], outputs=['brightness/_reduce'])
+    # Rolling buffer n last predictions
+    buffer = Rolling(buffer_size=buffer_size)
+    vehicle.add(buffer, inputs=['brightness/_reduce'], outputs=[brightness_output])
+
+
+def add_color_box_detector(vehicle, color_to_detect, epsilon, nb_pixel_min, camera_input, detect_model_output):
+    from xebikart.parts.image import ExtractColorAreaInBox
+
+    # Get color box from image
+    detection_model = ExtractColorAreaInBox(color_to_detect=color_to_detect, epsilon=epsilon, nb_pixel_min=nb_pixel_min)
+    vehicle.add(detection_model, inputs=[camera_input], outputs=[detect_model_output])
