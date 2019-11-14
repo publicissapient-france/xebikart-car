@@ -142,7 +142,7 @@ class KeynoteDriverV2:
 
             if self.is_takeover_mode():
                 return self.current_throttle, self.current_takeover_sequence.pop(), "takeover"
-            return ai_steering, self.current_throttle, "ai_v1_mode"
+            return ai_steering, self.current_throttle, "ai_v2_mode"
 
 
 def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
