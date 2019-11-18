@@ -19,11 +19,11 @@ import donkeycar as dk
 
 from xebikart.parts import (add_throttle, add_steering, add_pi_camera, add_logger,
                             add_mqtt_image_base64_publisher, add_mqtt_metadata_publisher,
-                            add_mqtt_remote_mode_subscriber, add_brightness_detector)
+                            add_mqtt_remote_mode_subscriber, add_brightness_detector,
+                            add_color_box_detector)
 from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import Joystick
-from xebikart.parts.buffers import Rolling
 from xebikart.parts.keras import OneOutputModel
 
 import xebikart.images.transformer as image_transformer
@@ -61,14 +61,20 @@ def drive(cfg, args):
 
     # Brightness
     print("Loading brightness detector...")
-    add_brightness_detector(vehicle, 'cam/image_array', 'brightness/buffer')
+    brightness_buffer_size = 10
+    add_brightness_detector(vehicle, brightness_buffer_size, 'cam/image_array', 'brightness/buffer')
+
+    # Add color box detection
+    print("Loading brightness detector...")
+    color_to_detect = [int(v) for v in args["--color"].split(",")]
+    add_color_box_detector(vehicle, color_to_detect, 30, 10, 'cam/image_array', 'detect/box')
 
     # Keynote driver
     print("Loading keynote driver...")
-    throttle = args["--throttle"]
-    driver = KeynoteDriverV2(default_throttle=throttle, exit_threshold=1., brightness_threshold=50000 * 10)
+    throttle = float(args["--throttle"])
+    driver = KeynoteDriverV2(default_throttle=throttle, exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
     vehicle.add(driver,
-                inputs=['js/steering', 'js/throttle', 'js/actions', 'exit/buffer', 'brightness/buffer'],
+                inputs=['js/steering', 'js/throttle', 'js/actions', 'ai/steering', 'detect/box', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle', 'pilot/mode'])
 
     add_steering(vehicle, cfg, 'pilot/steering')
@@ -97,9 +103,9 @@ class KeynoteDriverV2:
         self.current_throttle = self.default_throttle
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.emergency_sequence = [-0.4, 0, -0.4] + ([0.] * 10)
+        self.emergency_sequence = ([-0.4] * 5) + ([0.] * 20)
         self.current_emergency_sequence = []
-        self.takeover_sequence = ([-1.] * 15) + ([0.5] * 15)
+        self.takeover_sequence = ([0.5] * 10) + ([0.2] * 5) + ([-1.] * 10)
         self.current_takeover_sequence = []
         self.safe_mode = True
 
@@ -141,7 +147,7 @@ class KeynoteDriverV2:
                 self.current_throttle -= 0.01
 
             if self.is_takeover_mode():
-                return self.current_throttle, self.current_takeover_sequence.pop(), "takeover"
+                return self.current_takeover_sequence.pop(), self.current_throttle, "takeover"
             return ai_steering, self.current_throttle, "ai_v2_mode"
 
 
