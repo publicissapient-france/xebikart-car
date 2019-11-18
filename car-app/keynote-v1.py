@@ -51,11 +51,12 @@ def drive(cfg, args):
 
     # Brightness
     print("Loading brightness detector...")
-    add_brightness_detector(vehicle, 'cam/image_array', 'brightness/buffer')
+    brightness_buffer_size = 10
+    add_brightness_detector(vehicle, brightness_buffer_size, 'cam/image_array', 'brightness/buffer')
 
     # Keynote driver
     print("Loading keynote driver...")
-    driver = KeynoteDriverV1(exit_threshold=1., brightness_threshold=50000 * 10)
+    driver = KeynoteDriverV1(exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
     vehicle.add(driver,
                 inputs=['js/steering', 'js/throttle', 'js/actions', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle', 'pilot/mode'])
@@ -69,7 +70,7 @@ def drive(cfg, args):
                                 steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode")
     add_mqtt_remote_mode_subscriber(vehicle, cfg, cfg.RABBITMQ_TOPIC + "/cars/" + str(cfg.CAR_ID), cfg.CAR_ID, 'mqtt/mode')
 
-    #add_logger(vehicle, 'detect/_sum', 'detect/_sum')
+    add_logger(vehicle, 'pilot/throttle', 'pilot/throttle')
     #add_logger(vehicle, 'mqtt/mode', 'mqtt/mode')
 
     print("Starting vehicle...")
@@ -83,7 +84,7 @@ class KeynoteDriverV1:
     def __init__(self, exit_threshold, brightness_threshold):
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.emergency_sequence = [-0.4, 0, -0.4] + ([0.] * 10)
+        self.emergency_sequence = ([-0.4] * 5) + ([0.] * 20)
         self.current_emergency_sequence = []
         self.safe_mode = False
 
