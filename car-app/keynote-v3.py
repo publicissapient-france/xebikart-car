@@ -105,24 +105,15 @@ class KeynoteDriverV2:
         self.brightness_threshold = brightness_threshold
         self.emergency_sequence = ([-0.4] * 5) + ([0.] * 20)
         self.current_emergency_sequence = []
-        self.takeover_sequence = ([0.5] * 10) + ([0.2] * 5) + ([-1.] * 10)
-        self.current_takeover_sequence = []
         self.safe_mode = True
 
     def is_emergency_mode(self):
         return len(self.current_emergency_sequence) > 0
 
-    def is_takeover_mode(self):
-        return len(self.current_takeover_sequence) > 0
-
     def initiate_emergency_mode(self):
         self.safe_mode = True
         self.current_throttle = self.default_throttle
-        self.current_takeover_sequence = []
         self.current_emergency_sequence = self.emergency_sequence.copy()
-
-    def initiate_takeover_mode(self):
-        self.current_takeover_sequence = self.takeover_sequence.copy()
 
     def run(self, user_steering, user_throttle, user_buttons, ai_steering, detect_box, exit_buffer, brightness_buffer):
         if self.is_emergency_mode():
@@ -139,15 +130,11 @@ class KeynoteDriverV2:
                     or np.sum(exit_buffer) > self.exit_threshold
                     or np.sum(brightness_buffer) < self.brightness_threshold):
                 self.initiate_emergency_mode()
-            elif not self.is_takeover_mode() and (50 < y <= 120 and 0 <= x < 100):
-                self.initiate_takeover_mode()
             if Joystick.R1 in user_buttons:
                 self.current_throttle += 0.01
             if Joystick.L1 in user_buttons:
                 self.current_throttle -= 0.01
 
-            if self.is_takeover_mode():
-                return self.current_takeover_sequence.pop(), self.current_throttle, "takeover"
             return ai_steering, self.current_throttle, "ai_v2_mode"
 
 
