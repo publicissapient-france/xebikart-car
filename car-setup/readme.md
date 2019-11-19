@@ -8,14 +8,21 @@ For convenience, here are the main steps:
 
 ## Prepare SD card
 
-Download image available [here](https://drive.google.com/open?id=1vr4nEXLEh4xByKAXik8KhK3o-XWgo2fQ) and unzip it.
+Download latest raspbian image available [here](https://downloads.raspberrypi.org/raspbian_lite_latest) and unzip it.
 
 Copy image to SD card (replace **diskX** and **rdiskX** with **appropriate** identifier):
 **/!\\** command below will reset all data in **diskX** **/!\\**
 ```
 diskutil list
 diskutil unmountDisk /dev/diskX
-sudo dd bs=1m if=donkey_2.5.0_pi3.img of=/dev/rdiskX conv=sync
+sudo dd bs=1m if=2019-09-26-raspbian-buster-lite.img of=/dev/rdiskX conv=sync
+```
+
+## Enable SSH
+
+Create `/ssh` file inside SD card boot volume:
+```
+touch /Volumes/boot/ssh
 ```
 
 ## Reserve a static IP address for the car
@@ -24,7 +31,7 @@ Check [this page](https://github.com/xebia-france/xebikart-car/wiki/Configure-st
 
 ## Setup Wifi
 
-Create `/wpa_supplicant.conf` file inside SD card boot volume with content like following:
+Create `/Volumes/boot/wpa_supplicant.conf` file inside SD card boot volume with content below:
 ```
 country=FR
 ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
@@ -41,14 +48,20 @@ Finally you can unmount SD card from your computer
 diskutil unmountDisk /dev/diskX
 ```
 
-## Expand filesystem
+## Configure PI
 
 Connect to pi via ssh. 
 ```
 ssh pi@192.168.1.{101,102,103}
 $ sudo raspi-config
 ```
-Then go to `Advanced Options` > `Expand Filesystem > Finish` and reboot.
+
+Configure following options:
+1. Enable I2C: `Interfacing Options` > `I2C`
+2. Enable Camera: `Interfacing Options` > `Camera`
+3. Expand Filesystem: `Advanced Options` > `Expand Filesystem`
+4. Apply all changes: `Finish`
+4. Reboot after applying changes: `Yes`
 
 ## Setup App (from Desktop)
 
@@ -101,12 +114,7 @@ To start pairing, simultaneously press **PS** and **Share** buttons for 5 second
 
 ### from Raspberry Pi
 
-After first setup, pi needs to be rebooted:
-```
-sudo reboot
-```
-
-After reboot, launch bluetooth command prompt:
+Launch bluetooth command prompt:
 ```
 sudo bluetoothctl
 ```
