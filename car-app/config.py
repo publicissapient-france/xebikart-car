@@ -49,8 +49,5 @@ RABBITMQ_PORT = 1883
 RABBITMQ_TOPIC = "xebikart-events"
 RABIITMQ_VIDEO_TOPIC = "xebikart-car-video"
 
-# IMU
-IMU_ENABLED = True
-
 # LIDAR
 LIDAR_ENABLED = False

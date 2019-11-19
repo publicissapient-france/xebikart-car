@@ -39,8 +39,6 @@
       - libqtgui4
       - libqt4-test
       - python3-opencv
-      # IMU
-      - python3-smbus
     update_cache: "yes"
     state: "present"
 

@@ -39,27 +39,8 @@ def add_mqtt_remote_mode_subscriber(vehicle, cfg, topic, car_id, remote_mode):
     vehicle.add(mqtt_client, outputs=[remote_mode])
 
 
-def add_imu_sensor(vehicle, cfg,
-                   car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
-                   car_tx="car/tx", car_ty="car/ty", car_tz="car/tz"):
-    from xebikart.parts.imu import Mpu6050
-
-    imu = Mpu6050()
-    vehicle.add(
-        imu,
-        outputs=[
-            car_dx,
-            car_dy,
-            car_dz,
-            car_tx,
-            car_ty,
-            car_tz
-        ],
-        threaded=True,
-    )
-
-
-def add_lidar_sensor(vehicle, cfg, car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle"):
+def add_lidar_sensor(vehicle, cfg,
+                     car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle"):
     from xebikart.parts.lidar import RPLidar, BreezySLAM
 
     lidar = RPLidar()

@@ -22,7 +22,6 @@ from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
 from xebikart.parts.lidar import RPLidar, BreezySLAM
-from xebikart.parts.imu import Mpu6050
 from xebikart.parts.mqtt import MQTTClient
 
 
@@ -90,19 +89,12 @@ def drive(cfg, model_path=None):
             'car/x',
             'car/y',
             'car/z',
-            'car/angle',
-            'car/dx',
-            'car/dy',
-            'car/dz',
-            'car/tx',
-            'car/ty',
-            'car/tz'
+            'car/angle'
         ],
         outputs=[
             'angle',
             'throttle',
             'run_pilot',
-            'imu_enabled',
             'lidar_enabled'
         ]
     )
@@ -130,21 +122,6 @@ def drive(cfg, model_path=None):
         inputs=[
             'throttle'
         ]
-    )
-
-    imu = Mpu6050()
-    vehicle.add(
-        imu,
-        outputs=[
-            'car/dx',
-            'car/dy',
-            'car/dz',
-            'car/tx',
-            'car/ty',
-            'car/tz'
-        ],
-        threaded=True,
-        run_condition='imu_enabled'
     )
 
     lidar = RPLidar()
@@ -193,13 +170,7 @@ def drive(cfg, model_path=None):
             'car/x',
             'car/y',
             'car/z',
-            'car/angle',
-            'car/dx',
-            'car/dy',
-            'car/dz',
-            'car/tx',
-            'car/ty',
-            'car/tz'
+            'car/angle'
         ],
         outputs=[
             'remote/mode'
