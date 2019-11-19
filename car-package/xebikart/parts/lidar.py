@@ -35,7 +35,7 @@ class RPLidar(object):
 
     def update(self):
         while self.on:
-            scans = self.lidar.iter_scans(1000)
+            scans = self.lidar.iter_scans(max_buf_meas=1000, min_len=ANGLES_SLOTS)
             try:
                 for scan in scans:
                     self.scan = scan
@@ -71,8 +71,8 @@ class Measure:
 def measures_to_positions(measures):
     return [
         (
-            measure.distance * math.sin(math.radians(measure.angle)),
-            measure.distance * math.cos(math.radians(measure.angle))
+            int(measure.distance * math.sin(math.radians(measure.angle))),
+            int(measure.distance * math.cos(math.radians(measure.angle)))
         ) for measure in measures
     ]
 
@@ -128,6 +128,7 @@ class LidarPosition:
         self.measures = []
         self.location_history = deque([])
         self.location = Location(angle=0, x=0, y=0)
+        self.border_positions = []
         self.on = True
 
     def update(self):
@@ -136,6 +137,7 @@ class LidarPosition:
             if len(self.measures) < 1:
                 continue
             positions = measures_to_positions(self.measures)
+            self.border_positions = [[x, y] for (x, y) in positions]
             bounding_box = MinimumBoundingBox(positions)
             bounding_box_angle = bounding_box.unit_vector_angle
             rotated_corner_points = [rotate(point, bounding_box_angle) for point in bounding_box.corner_points]
@@ -151,7 +153,7 @@ class LidarPosition:
     def run(self, scan):
         if scan is not None and len(scan) > 0:
             self.measures = list(map(lambda item: Measure(item[1], item[2]), scan))
-        return self.location
+        return self.location, self.border_positions
 
     def shutdown(self):
         self.on = False

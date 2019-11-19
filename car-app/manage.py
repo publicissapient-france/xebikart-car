@@ -102,7 +102,8 @@ def drive(cfg, model_path=None):
             'lidar/scan'
         ],
         outputs=[
-            'lidar/position'
+            'lidar/position',
+            'lidar/borders'
         ],
         threaded=True
     )
@@ -114,10 +115,8 @@ def drive(cfg, model_path=None):
             'user/mode',
             'user/angle',
             'user/throttle',
-            'car/x',
-            'car/y',
-            'car/z',
-            'car/angle'
+            'lidar/position',
+            'lidar/borders'
         ],
         outputs=[
             'remote/mode'
