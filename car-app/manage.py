@@ -93,8 +93,7 @@ def drive(cfg, model_path=None):
             'lidar/distances',
             'lidar/angles'
         ],
-        threaded=True,
-        run_condition='lidar_enabled'
+        threaded=True
     )
 
     mqtt_client = MQTTClient(cfg)

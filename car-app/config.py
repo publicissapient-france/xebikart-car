@@ -48,6 +48,3 @@ RABBITMQ_HOST = "localhost"
 RABBITMQ_PORT = 1883
 RABBITMQ_TOPIC = "xebikart-events"
 RABIITMQ_VIDEO_TOPIC = "xebikart-car-video"
-
-# LIDAR
-LIDAR_ENABLED = False

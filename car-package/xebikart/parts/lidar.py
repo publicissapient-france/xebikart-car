@@ -16,17 +16,16 @@ class RPLidar(object):
     '''
 
     def __init__(self, port='/dev/ttyUSB0'):
-        if config.LIDAR_ENABLED:
-            from rplidar import RPLidar
-            self.lidar = RPLidar(port)
-            self.lidar.clear_input()
-            time.sleep(1)
+        from rplidar import RPLidar
+        self.lidar = RPLidar(port)
+        self.lidar.clear_input()
+        time.sleep(1)
         self.distances = []
         self.angles = []
         self.on = True
 
     def update(self):
-        while config.LIDAR_ENABLED and self.on:
+        while self.on:
             scans = self.lidar.iter_scans(1000)
             try:
                 for scan in scans:
@@ -52,21 +51,20 @@ class BreezySLAM(object):
     '''
 
     def __init__(self, map_size_pixels=500, map_size_meters=10, map_quality=5):
-        if config.LIDAR_ENABLED:
-            from breezyslam.algorithms import RMHC_SLAM
-            from breezyslam.sensors import Laser
-            laser_model = Laser(
-                scan_size=360,
-                scan_rate_hz=10.,
-                detection_angle_degrees=360,
-                distance_no_detection_mm=12000
-            )
-            self.slam = RMHC_SLAM(
-                laser_model,
-                map_size_pixels,
-                map_size_meters,
-                map_quality
-            )
+        from breezyslam.algorithms import RMHC_SLAM
+        from breezyslam.sensors import Laser
+        laser_model = Laser(
+            scan_size=360,
+            scan_rate_hz=10.,
+            detection_angle_degrees=360,
+            distance_no_detection_mm=12000
+        )
+        self.slam = RMHC_SLAM(
+            laser_model,
+            map_size_pixels,
+            map_size_meters,
+            map_quality
+        )
 
     def run(self, distances, angles):
         self.slam.update(distances, scan_angles_degrees=angles)
