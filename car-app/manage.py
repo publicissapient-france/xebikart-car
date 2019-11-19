@@ -21,7 +21,7 @@ from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
-from xebikart.parts.lidar import RPLidar, BreezySLAM
+from xebikart.parts.lidar import RPLidar
 from xebikart.parts.mqtt import MQTTClient
 
 
@@ -61,44 +61,6 @@ def drive(cfg, model_path=None):
         threaded=True
     )
 
-    keras_linear = KerasLinear()
-    if model_path:
-        keras_linear.load(model_path)
-
-    vehicle.add(
-        keras_linear,
-        inputs=[
-            'cam/image_array'
-        ],
-        outputs=[
-            'pilot/angle',
-            'pilot/throttle'
-        ],
-        run_condition='run_pilot'
-    )
-
-    driver = Driver(cfg)
-    vehicle.add(
-        driver,
-        inputs=[
-            'user/mode',
-            'user/angle',
-            'user/throttle',
-            'pilot/angle',
-            'pilot/throttle',
-            'car/x',
-            'car/y',
-            'car/z',
-            'car/angle'
-        ],
-        outputs=[
-            'angle',
-            'throttle',
-            'run_pilot',
-            'lidar_enabled'
-        ]
-    )
-
     steering = PWMSteering(
         controller=PCA9685(cfg.STEERING_CHANNEL),
         left_pulse=cfg.STEERING_LEFT_PWM,
@@ -107,7 +69,7 @@ def drive(cfg, model_path=None):
     vehicle.add(
         steering,
         inputs=[
-            'angle'
+            'user/angle'
         ]
     )
 
@@ -120,7 +82,7 @@ def drive(cfg, model_path=None):
     vehicle.add(
         throttle,
         inputs=[
-            'throttle'
+            'user/throttle'
         ]
     )
 
@@ -133,31 +95,6 @@ def drive(cfg, model_path=None):
         ],
         threaded=True,
         run_condition='lidar_enabled'
-    )
-
-    breezy_slam = BreezySLAM()
-    vehicle.add(
-        breezy_slam,
-        inputs=[
-            'lidar/distances',
-            'lidar/angles'
-        ],
-        outputs=[
-            'car/x',
-            'car/y',
-            'car/z',
-            'car/angle'
-        ],
-        run_condition='lidar_enabled'
-    )
-
-    inputs = ['cam/image_array', 'user/angle', 'user/throttle', 'user/mode', 'timestamp']
-    types = ['image_array', 'float', 'float', 'str', 'str']
-    tub_writer = TubWriter(path=cfg.TUB_PATH, inputs=inputs, types=types)
-    vehicle.add(
-        tub_writer,
-        inputs=inputs,
-        run_condition='recording'
     )
 
     mqtt_client = MQTTClient(cfg)
@@ -182,24 +119,6 @@ def drive(cfg, model_path=None):
         rate_hz=cfg.DRIVE_LOOP_HZ,
         max_loop_count=cfg.MAX_LOOPS
     )
-
-class Driver:
-
-    def __init__(self, config):
-        self.config = config
-
-    def run(
-            self,
-            mode,
-            user_angle, user_throttle,  # from controller
-            pilot_angle, pilot_throttle,  # from ML model
-            x, y, z, angle,  # from lidar
-            dx, dy, dz, tx, ty, tz  # from imu
-    ):
-        if mode == 'user':
-            return user_angle, user_throttle, True, self.config.IMU_ENABLED, self.config.LIDAR_ENABLED
-        else:
-            return pilot_angle, pilot_throttle, False, self.config.IMU_ENABLED, self.config.LIDAR_ENABLED
 
 
 if __name__ == '__main__':
