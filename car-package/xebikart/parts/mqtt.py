@@ -55,7 +55,7 @@ class MQTTClient:
             self,
             mode,
             user_angle, user_throttle,  # from controller
-            x, y, z, angle  # from lidar
+            location, borders  # from lidar
     ):
         self.output_payload = {
             'car': self.cfg.CAR_ID,
@@ -65,11 +65,11 @@ class MQTTClient:
                 "throttle": user_throttle
             },
             'position': {
-                'x': x,
-                'y': y,
-                'z': z
+                'x': location.x,
+                'y': location.y
             },
-            'angle': angle
+            'angle': location.angle,
+            'borders': borders
         }
         if self.input_payload is not None:
             return self.input_payload['mode']
@@ -176,7 +176,7 @@ class MetadataMQTTPublisher(MQTTPublisher):
          # from controller
          user_angle, user_throttle,
          # from lidar
-         x, y, z, angle) = args
+         location, borders) = args
 
         self.output_queue.put_nowait(json.dumps({
             'car': self.car_id,
@@ -186,21 +186,11 @@ class MetadataMQTTPublisher(MQTTPublisher):
                 "throttle": user_throttle
             },
             'position': {
-                'x': x,
-                'y': y,
-                'z': z
+                'x': location.x,
+                'y': location.y
             },
-            'angle': angle,
-            'acceleration': {
-                'x': dx,
-                'y': dy,
-                'z': dz
-            },
-            'angular_speed': {
-                'x': tx,
-                'y': ty,
-                'z': tz
-            }
+            'angle': location.angle,
+            'borders': borders
         }))
 
 
