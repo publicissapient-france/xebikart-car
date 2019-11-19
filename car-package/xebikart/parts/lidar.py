@@ -5,6 +5,8 @@ import logging
 import time
 import numpy as np
 
+from operator import itemgetter
+
 
 # These samples were extracted and adapted from donkeycar parts samples. Original version can be found here:
 # https://github.com/autorope/donkeycar/blob/dev/donkeycar/parts/lidar.py
@@ -34,17 +36,13 @@ class LidarScan(object):
     def run_threaded(self):
         quality, angles, distances = [list(t) for t in zip(*self.scan)]
 
-        min_angles = min(angles)
-        angles_distances = np.array(list(zip(angles, distances)))
-
-        # Reset buffer to min angles
-        while angles_distances[0][0] != min_angles:
-            angles_distances = np.roll(angles_distances, shift=-1, axis=0)
-
-        angles_distances = list(angles_distances.tolist())
+        # Sort angles distances
+        angles_distances = list(zip(angles, distances))
+        angles_distances.sort(key=itemgetter(0))
 
         current_item = angles_distances.pop(0)
         next_item = angles_distances.pop(0)
+
         v_distances = []
 
         for i in range(360):
