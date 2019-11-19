@@ -5,7 +5,7 @@ import logging
 from collections import deque
 
 import config
-from box import MinimumBoundingBox
+from xebikart.box import MinimumBoundingBox
 from rplidar import RPLidar as rpl
 
 ANGLES_SLOTS = 36
