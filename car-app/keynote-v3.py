@@ -26,7 +26,7 @@ from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import Joystick
 from xebikart.parts.keras import OneOutputModel
-from xebikart.parts.lidar import LidarScan
+from xebikart.parts.lidar import LidarScan, LidarDistancesVector
 
 import xebikart.images.transformer as image_transformer
 
@@ -53,8 +53,10 @@ def drive(cfg, args):
 
     # Add lidar scan
     print("Loading Lidar scan...")
-    lidar = LidarScan()
-    vehicle.add(lidar, outputs=['lidar/distances'], threaded=True)
+    lidar_scan = LidarScan()
+    lidar_distances_vector = LidarDistancesVector(nb_angles=360)
+    vehicle.add(lidar_scan, outputs=['lidar/scan'], threaded=True)
+    vehicle.add(lidar_distances_vector, inputs=['lidar/scan'], outputs=['lidar/distances'])
 
     # Steering model
     print("Loading steering model...")
