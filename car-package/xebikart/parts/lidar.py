@@ -2,6 +2,7 @@ import time
 import math
 import serial
 import logging
+from collections import deque
 
 import config
 from box import MinimumBoundingBox
@@ -14,6 +15,7 @@ ANGLES_SOUTH_SLOT = ANGLES_SLOTS // 2  # shift in index to retrieve southern ang
 ANGLES_EAST_SLOT = ANGLES_SLOTS // 4  # shift in index to retrieve eastern angle
 ANGLES_WEST_SLOT = ANGLES_EAST_SLOT + ANGLES_SOUTH_SLOT  # shift in index to retrieve western angle
 
+LOCATION_HISTORY_LENGTH = 10
 
 # These samples were extracted and adapted from donkeycar parts samples. Original version can be found here:
 # https://github.com/autorope/donkeycar/blob/dev/donkeycar/parts/lidar.py
@@ -93,12 +95,15 @@ def corner_points_to_positions(corner_points):
     return (x_min, y_min), (x_max, y_max)
 
 
-def next_location(current_location, positions, raw_angle):
+def next_location(location_history, positions, raw_angle):
     (position1, position2) = positions
-    current_position = (current_location.x, current_location.y)
-    next_position = position1 \
-        if distance(position1, current_position) < distance(position2, current_position) \
-        else position2
+    sum_for_position1 = 0
+    sum_for_position2 = 0
+    for previous_location in location_history:
+        previous_position = (previous_location.x, previous_location.y)
+        sum_for_position1 += distance(position1, previous_position)
+        sum_for_position2 += distance(position2, previous_position)
+    next_position = position1 if sum_for_position1 < sum_for_position2 else position2
     next_angle = int(math.degrees(raw_angle) % 360)
     return Location(next_angle, next_position[0], next_position[1])
 
@@ -121,6 +126,7 @@ class LidarPosition:
 
     def __init__(self):
         self.measures = []
+        self.location_history = deque([])
         self.location = Location(angle=0, x=0, y=0)
         self.on = True
 
@@ -134,7 +140,10 @@ class LidarPosition:
             bounding_box_angle = bounding_box.unit_vector_angle
             rotated_corner_points = [rotate(point, bounding_box_angle) for point in bounding_box.corner_points]
             positions = corner_points_to_positions(rotated_corner_points)
-            self.location = next_location(self.location, positions, bounding_box_angle)
+            self.location = next_location(self.location_history, positions, bounding_box_angle)
+            self.location_history.append(self.location)
+            if len(self.location_history) > LOCATION_HISTORY_LENGTH:
+                self.location_history.popleft()
 
     def run_threaded(self, scan):
         return self.run(scan)
