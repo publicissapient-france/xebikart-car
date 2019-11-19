@@ -5,8 +5,8 @@ def color_area(tf_image_original, color_to_detect, epsilon):
     tf_boolean_channels = []
 
     for i in range(len(color_to_detect)):
-        tf_ = tf.where(((tf_image_original[:, :, i] < (color_to_detect[i] + epsilon)) &
-                        (tf_image_original[:, :, i] > (color_to_detect[i] - epsilon))),
+        tf_ = tf.where(((tf_image_original[:, :, i] < (color_to_detect[i] + epsilon[i])) &
+                        (tf_image_original[:, :, i] > (color_to_detect[i] - epsilon[i]))),
                        tf.ones_like(tf_image_original[:, :, i]),
                        tf.zeros_like(tf_image_original[:, :, i]))
 

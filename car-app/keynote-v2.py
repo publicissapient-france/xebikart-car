@@ -67,7 +67,7 @@ def drive(cfg, args):
     # Add color box detection
     print("Loading brightness detector...")
     color_to_detect = [int(v) for v in args["--color"].split(",")]
-    add_color_box_detector(vehicle, color_to_detect, 30, 10, 'cam/image_array', 'detect/box')
+    add_color_box_detector(vehicle, color_to_detect, [30, 30, 30], 10, 'cam/image_array', 'detect/box')
 
     # Keynote driver
     print("Loading keynote driver...")
@@ -82,8 +82,8 @@ def drive(cfg, args):
 
     print("Log to rabbitmq")
     add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABIITMQ_VIDEO_TOPIC, 'cam/image_array')
-    add_mqtt_metadata_publisher(vehicle, cfg, cfg.RABBITMQ_TOPIC, cfg.CAR_ID,
-                                steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode")
+    #add_mqtt_metadata_publisher(vehicle, cfg, cfg.RABBITMQ_TOPIC, cfg.CAR_ID,
+    #                            steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode")
     add_mqtt_remote_mode_subscriber(vehicle, cfg, cfg.RABBITMQ_TOPIC + "/cars/" + str(cfg.CAR_ID), cfg.CAR_ID,
                                     'mqtt/mode')
 
