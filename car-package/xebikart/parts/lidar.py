@@ -3,7 +3,6 @@ import serial
 import logging
 
 import time
-import numpy as np
 
 from operator import itemgetter
 
