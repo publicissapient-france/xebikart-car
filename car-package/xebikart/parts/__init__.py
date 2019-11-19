@@ -13,9 +13,8 @@ def add_mqtt_image_base64_publisher(vehicle, cfg, topic, camera_input):
 
 def add_mqtt_metadata_publisher(vehicle, cfg, topic, car_id,
                                 steering="user/angle", throttle="user/throttle", mode="user/mode",
-                                car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle",
-                                car_dx="car/dx", car_dy="car/dy", car_dz="car/dz",
-                                car_tx="car/tx", car_ty="car/ty", car_tz="car/tz",
+                                location="lidar/position",
+                                borders="lidar/borders",
                                 ):
     from xebikart.parts.mqtt import MetadataMQTTPublisher
 
@@ -24,9 +23,7 @@ def add_mqtt_metadata_publisher(vehicle, cfg, topic, car_id,
         mqtt_client,
         inputs=[
             mode, steering, throttle,
-            car_x, car_y, car_z, car_angle,
-            car_dx, car_dy, car_dz,
-            car_tx, car_ty, car_tz
+            location, borders
         ],
         threaded=True
     )
@@ -39,9 +36,8 @@ def add_mqtt_remote_mode_subscriber(vehicle, cfg, topic, car_id, remote_mode):
     vehicle.add(mqtt_client, outputs=[remote_mode])
 
 
-def add_lidar_sensor(vehicle, cfg,
-                     car_x="car/x", car_y="car/y", car_z="car/z", car_angle="car/angle"):
-    from xebikart.parts.lidar import RPLidar, BreezySLAM
+def add_lidar_sensor(vehicle, cfg, position="lidar/position", borders="lidar/borders"):
+    from xebikart.parts.lidar import RPLidar, LidarPosition
 
     lidar = RPLidar()
     vehicle.add(
@@ -52,20 +48,19 @@ def add_lidar_sensor(vehicle, cfg,
         ],
         threaded=True
     )
-    breezy_slam = BreezySLAM()
+    position = LidarPosition()
     vehicle.add(
-        breezy_slam,
+        position,
         inputs=[
-            'lidar/_distances',
-            'lidar/_angles'
+            'lidar/scan'
         ],
         outputs=[
-            car_x,
-            car_y,
-            car_z,
-            car_angle
-        ]
+            'lidar/position',
+            'lidar/borders'
+        ],
+        threaded=True
     )
+
 
 
 def add_logger(vehicle, prefix, input):
