@@ -168,27 +168,21 @@ class LidarDistances:
 
 
 class LidarDistancesVector(object):
-    def __init__(self, nb_angles):
-        self.nb_angles = nb_angles
 
     def run(self, scan):
         scan = scan if scan is not None else [(0., 0., 0.), (0., 1., 0.), (0., 2., 0.)]
-        quality, angles, distances = [list(t) for t in zip(*scan)]
+        scan.sort(key=itemgetter(1))
 
-        # Sort angles distances
-        angles_distances = list(zip(angles, distances))
-        angles_distances.sort(key=itemgetter(0))
-
-        current_item = angles_distances.pop(0)
-        next_item = angles_distances.pop(0)
+        current_item = scan.pop(0)
+        next_item = scan.pop(0)
 
         v_distances = []
 
-        for i in range(self.nb_angles):
+        for i in range(360):
             if math.fabs(current_item[0] - i) > math.fabs(next_item[0] - i):
                 current_item = next_item
-                if len(angles_distances) > 0:
-                    next_item = angles_distances.pop(0)
+                if len(scan) > 0:
+                    next_item = scan.pop(0)
                 else:
                     next_item = (i, 0.)
             v_distances.append(current_item[1])
