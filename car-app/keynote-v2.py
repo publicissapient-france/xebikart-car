@@ -103,7 +103,7 @@ class KeynoteDriverV2:
         self.current_throttle = self.default_throttle
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.emergency_sequence = ([-0.4] * 5) + ([0.] * 20)
+        self.emergency_sequence = ([-1.] * 5) + ([0.] * 20)
         self.current_emergency_sequence = []
         self.safe_mode = True
 

@@ -54,7 +54,7 @@ def drive(cfg, args):
     # Add lidar scan
     print("Loading Lidar scan...")
     lidar_scan = LidarScan()
-    lidar_distances_vector = LidarDistancesVector(nb_angles=360)
+    lidar_distances_vector = LidarDistancesVector()
     vehicle.add(lidar_scan, outputs=['lidar/scan'], threaded=True)
     vehicle.add(lidar_distances_vector, inputs=['lidar/scan'], outputs=['lidar/distances'])
 
@@ -78,7 +78,7 @@ def drive(cfg, args):
     throttle = float(args["--throttle"])
     driver = KeynoteDriverV3(default_throttle=throttle, exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
     vehicle.add(driver,
-                inputs=['js/steering', 'js/throttle', 'js/actions', 'ai/steering', 'exit/buffer', 'brightness/buffer'],
+                inputs=['js/steering', 'js/throttle', 'js/actions', 'ai/steering', 'lidar/distances', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle', 'pilot/mode'])
 
     add_steering(vehicle, cfg, 'pilot/steering')
@@ -107,7 +107,7 @@ class KeynoteDriverV3:
         self.current_throttle = self.default_throttle
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.emergency_sequence = ([-0.4] * 5) + ([0.] * 20)
+        self.emergency_sequence = ([-1.] * 5) + ([0.] * 20)
         self.current_emergency_sequence = []
         self.safe_mode = True
 
@@ -119,7 +119,21 @@ class KeynoteDriverV3:
         self.current_throttle = self.default_throttle
         self.current_emergency_sequence = self.emergency_sequence.copy()
 
-    def run(self, user_steering, user_throttle, user_buttons, ai_steering, exit_buffer, brightness_buffer):
+    def has_obstacle(self, measures, start_range, end_range, distance, size):
+        measures = [m < distance for m in measures[start_range:end_range]]
+        max_size = 0
+        current_size = 0
+        while len(measures) > 0:
+            m = measures.pop()
+            if m:
+                current_size += 1
+            else:
+                if current_size > max_size:
+                    max_size = current_size
+                current_size = 0
+        return size <= max_size
+
+    def run(self, user_steering, user_throttle, user_buttons, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
         if self.is_emergency_mode():
             return 0., self.current_emergency_sequence.pop(), "emergency_stop"
         elif self.safe_mode:
@@ -130,13 +144,22 @@ class KeynoteDriverV3:
             # bottom left corner
             if (Joystick.CROSS in user_buttons
                     or np.sum(exit_buffer) > self.exit_threshold
-                    or np.sum(brightness_buffer) < self.brightness_threshold):
+                    or np.sum(brightness_buffer) < self.brightness_threshold
+                    or self.has_obstacle(lidar_distances, 90, 270, 200, 10)):
                 self.initiate_emergency_mode()
             if Joystick.R1 in user_buttons:
                 self.current_throttle += 0.01
             if Joystick.L1 in user_buttons:
                 self.current_throttle -= 0.01
 
+            if self.has_obstacle(lidar_distances, 160, 200, 600, 10):
+                return -1., self.current_throttle, "ai_v2_mode"
+            elif self.has_obstacle(lidar_distances, 200, 240, 600, 10):
+                return -0.4, self.current_throttle, "ai_v2_mode"
+            elif self.has_obstacle(lidar_distances, 240, 270, 600, 10):
+                return 0., self.current_throttle, "ai_v2_mode"
+            elif self.has_obstacle(lidar_distances, 270, 300, 600, 10):
+                return 0.5, self.current_throttle, "ai_v2_mode"
             return ai_steering, self.current_throttle, "ai_v2_mode"
 
 
