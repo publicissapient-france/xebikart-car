@@ -1,12 +1,12 @@
 from donkeycar.parts.transform import Lambda
 
 
-def add_mqtt_image_base64_publisher(vehicle, cfg, topic, camera_input):
-    from xebikart.parts.mqtt import RawMQTTPublisher
+def add_mqtt_image_base64_publisher(vehicle, cfg, topic, car_id, camera_input):
+    from xebikart.parts.mqtt import FrameMQTTPublisher
     from xebikart.parts.image import EncodeToBase64
 
     encoder = EncodeToBase64()
-    publisher = RawMQTTPublisher(cfg=cfg, topic=topic)
+    publisher = FrameMQTTPublisher(car_id, cfg=cfg, topic=topic)
     vehicle.add(encoder, inputs=[camera_input], outputs=["encoder/base64"])
     vehicle.add(publisher, inputs=["encoder/base64"], threaded=True)
 

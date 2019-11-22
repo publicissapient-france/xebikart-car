@@ -162,9 +162,16 @@ class MQTTPublisher:
         self.client.disconnect()
 
 
-class RawMQTTPublisher(MQTTPublisher):
-    def run_threaded(self, *args):
-        self.output_queue.put_nowait(args[0])
+class FrameMQTTPublisher(MQTTPublisher):
+    def __init__(self, car_id, *args, **kwargs):
+        super(FrameMQTTPublisher, self).__init__(*args, **kwargs)
+        self.car_id = car_id
+
+    def run_threaded(self, frame_base64):
+        self.output_queue.put_nowait(json.dumps({
+            'car': self.car_id,
+            'frame': frame_base64
+        }))
 
 
 class MetadataMQTTPublisher(MQTTPublisher):
@@ -202,7 +209,7 @@ class RemoteModeMQTTSubscriber(MQTTSubscriber):
         self.car_id = car_id
 
     def run(self):
-        mode = None
+        mode = ""
 
         while not self.input_queue.empty():
             dict_payload = self.input_queue.get_nowait()
