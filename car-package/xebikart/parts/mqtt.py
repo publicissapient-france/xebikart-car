@@ -204,6 +204,9 @@ class RemoteModeMQTTSubscriber(MQTTSubscriber):
 
         while not self.input_queue.empty():
             dict_payload = self.input_queue.get_nowait()
-            if 'mode' in dict_payload and 'car' in dict_payload and dict_payload['car'] == self.car_id:
+            if ('mode' in dict_payload
+                    and 'data' in dict_payload
+                    and 'carId' in dict_payload['data']
+                    and dict_payload['data']['carId'] == self.car_id):
                 mode = dict_payload['mode']
         return mode

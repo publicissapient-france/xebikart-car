@@ -61,7 +61,7 @@ def drive(cfg, args):
     # Steering model
     print("Loading steering model...")
     steering_model_path = args["--steering-model"]
-    add_steering_model(vehicle, steering_model_path, 1000, 'cam/image_array', 'lidar/distances', 'ai/steering')
+    add_steering_model(vehicle, steering_model_path, 600, 'cam/image_array', 'lidar/distances', 'ai/steering')
 
     # Exit model
     print("Loading exit model...")
@@ -73,23 +73,23 @@ def drive(cfg, args):
     brightness_buffer_size = 10
     add_brightness_detector(vehicle, brightness_buffer_size, 'cam/image_array', 'brightness/buffer')
 
+    # RabbitMQ
+    print("Log to rabbitmq")
+    add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABIITMQ_VIDEO_TOPIC, 'cam/image_array')
+    add_mqtt_metadata_publisher(vehicle, cfg, cfg.RABBITMQ_TOPIC, cfg.CAR_ID,
+                                steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode")
+    add_mqtt_remote_mode_subscriber(vehicle, cfg, cfg.RABBITMQ_MODES_TOPIC, cfg.CAR_ID, 'mqtt/mode')
+
     # Keynote driver
     print("Loading keynote driver...")
     throttle = float(args["--throttle"])
     driver = KeynoteDriverV3(default_throttle=throttle, exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
     vehicle.add(driver,
-                inputs=['js/steering', 'js/throttle', 'js/actions', 'ai/steering', 'lidar/distances', 'exit/buffer', 'brightness/buffer'],
+                inputs=['js/steering', 'js/throttle', 'js/actions', 'mqtt/mode', 'ai/steering', 'lidar/distances', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle', 'pilot/mode'])
 
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
-
-    print("Log to rabbitmq")
-    add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABIITMQ_VIDEO_TOPIC, 'cam/image_array')
-    add_mqtt_metadata_publisher(vehicle, cfg, cfg.RABBITMQ_TOPIC, cfg.CAR_ID,
-                                steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode")
-    add_mqtt_remote_mode_subscriber(vehicle, cfg, cfg.RABBITMQ_TOPIC + "/cars/" + str(cfg.CAR_ID), cfg.CAR_ID,
-                                    'mqtt/mode')
 
     #add_logger(vehicle, 'ai/steering', 'ai/steering')
     #add_logger(vehicle, 'mqtt/mode', 'mqtt/mode')
@@ -127,13 +127,13 @@ class KeynoteDriverV3:
             m = measures.pop()
             if m:
                 current_size += 1
-            else:
                 if current_size > max_size:
                     max_size = current_size
+            else:
                 current_size = 0
         return size <= max_size
 
-    def run(self, user_steering, user_throttle, user_buttons, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
+    def run(self, user_steering, user_throttle, user_buttons, mq_modes, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
         if self.is_emergency_mode():
             return 0., self.current_emergency_sequence.pop(), "emergency_stop"
         elif self.safe_mode:
@@ -141,11 +141,11 @@ class KeynoteDriverV3:
                 self.safe_mode = False
             return user_steering, user_throttle, "safe_mode"
         else:
-            # bottom left corner
             if (Joystick.CROSS in user_buttons
+                    or mq_modes == "stop"
                     or np.sum(exit_buffer) > self.exit_threshold
                     or np.sum(brightness_buffer) < self.brightness_threshold
-                    or self.has_obstacle(lidar_distances, 90, 270, 200, 10)):
+                    or self.has_obstacle(lidar_distances, 90, 270, 400, 10)):
                 self.initiate_emergency_mode()
             if Joystick.R1 in user_buttons:
                 self.current_throttle += 0.01
@@ -153,13 +153,17 @@ class KeynoteDriverV3:
                 self.current_throttle -= 0.01
 
             if self.has_obstacle(lidar_distances, 160, 200, 600, 10):
-                return -1., self.current_throttle, "ai_v2_mode"
+                print("160-200")
+                #return -1., self.current_throttle, "ai_v2_mode"
             elif self.has_obstacle(lidar_distances, 200, 240, 600, 10):
-                return -0.4, self.current_throttle, "ai_v2_mode"
+                print("200-240")
+                #return -0.4, self.current_throttle, "ai_v2_mode"
             elif self.has_obstacle(lidar_distances, 240, 270, 600, 10):
-                return 0., self.current_throttle, "ai_v2_mode"
+                print("240-270")
+                #return 0., self.current_throttle, "ai_v2_mode"
             elif self.has_obstacle(lidar_distances, 270, 300, 600, 10):
-                return 0.5, self.current_throttle, "ai_v2_mode"
+                print("270-300")
+                #return 0.5, self.current_throttle, "ai_v2_mode"
             return ai_steering, self.current_throttle, "ai_v2_mode"
 
 
@@ -197,6 +201,7 @@ def add_steering_model(vehicle, steering_path, lidar_clip, camera_input, lidar_i
     steering_model = OneOutputModel()
     steering_model.load(steering_path)
     vehicle.add(steering_model, inputs=['ai/_image', 'lidar/processed'], outputs=[steering_model_output])
+    #vehicle.add(steering_model, inputs=['ai/_image'], outputs=[steering_model_output])
 
 
 if __name__ == '__main__':

@@ -170,7 +170,7 @@ class LidarDistances:
 class LidarDistancesVector(object):
 
     def run(self, scan):
-        scan = scan if scan is not None else [(0., 0., 0.), (0., 1., 0.), (0., 2., 0.)]
+        scan = scan.copy() if scan is not None else [(0., 0., 0.), (0., 1., 0.), (0., 2., 0.)]
         scan.sort(key=itemgetter(1))
 
         current_item = scan.pop(0)
@@ -179,12 +179,10 @@ class LidarDistancesVector(object):
         v_distances = []
 
         for i in range(360):
-            if math.fabs(current_item[0] - i) > math.fabs(next_item[0] - i):
+            if math.fabs(current_item[1] - i) > math.fabs(next_item[1] - i):
                 current_item = next_item
                 if len(scan) > 0:
                     next_item = scan.pop(0)
-                else:
-                    next_item = (i, 0.)
-            v_distances.append(current_item[1])
+            v_distances.append(current_item[2])
 
         return v_distances
