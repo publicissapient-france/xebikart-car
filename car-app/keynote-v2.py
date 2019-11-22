@@ -138,7 +138,6 @@ class KeynoteDriverV2:
         return size <= max_size
 
     def run(self, user_steering, user_throttle, user_buttons, mq_modes, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
-        print(self.has_obstacle(lidar_distances, 140, 220, 1000, 10))
         if self.is_emergency_mode():
             return 0., self.current_emergency_sequence.pop(), "emergency_stop"
         elif self.safe_mode:
