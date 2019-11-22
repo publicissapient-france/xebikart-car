@@ -20,7 +20,7 @@ from donkeycar.parts.datastore import TubHandler
 
 from xebikart.parts import add_throttle, add_steering, add_pi_camera, add_logger
 from xebikart.parts.joystick import Joystick
-from xebikart.parts.lidar import LidarScan
+from xebikart.parts.lidar import LidarScan, LidarDistancesVector
 
 import tensorflow as tf
 
@@ -44,8 +44,12 @@ def drive(cfg, args):
     add_steering(vehicle, cfg, 'user/angle')
     add_throttle(vehicle, cfg, 'user/throttle')
 
-    lidar = LidarScan()
-    vehicle.add(lidar, outputs=['lidar/distances'], threaded=True)
+    # Add lidar scan
+    print("Loading Lidar scan...")
+    lidar_scan = LidarScan()
+    lidar_distances_vector = LidarDistancesVector()
+    vehicle.add(lidar_scan, outputs=['lidar/scan'], threaded=True)
+    vehicle.add(lidar_distances_vector, inputs=['lidar/scan'], outputs=['lidar/distances'])
 
     print("Loading TubWriter")
     tub_handler = TubHandler("tubes/")
