@@ -2,13 +2,12 @@
 
 """
 Usage:
-    keynote-v2.py --steering-model=<steering_model_path> --exit-model=<exit_model_path> [--color=<color>] [--throttle=<throttle>]
+    keynote-v2.py --steering-model=<steering_model_path> --exit-model=<exit_model_path> [--throttle=<throttle>]
 
 Options:
     -h --help                    Show this screen.
     --steering-model=<path>      Path to h5 model (steering only) (.h5)
     --exit-model=<path>          Path to tflite model (exit) (.tflite)
-    --color=<color>              Color to detect in picture [default: 187,133,101]
     --throttle=<throttle>        Fix throttle [default: 0.2]
 """
 
@@ -19,8 +18,7 @@ import donkeycar as dk
 
 from xebikart.parts import (add_throttle, add_steering, add_pi_camera, add_logger,
                             add_mqtt_image_base64_publisher, add_mqtt_metadata_publisher,
-                            add_mqtt_remote_mode_subscriber, add_brightness_detector,
-                            add_color_box_detector)
+                            add_mqtt_remote_mode_subscriber, add_brightness_detector)
 from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import Joystick
@@ -72,11 +70,6 @@ def drive(cfg, args):
     brightness_buffer_size = 10
     add_brightness_detector(vehicle, brightness_buffer_size, 'cam/image_array', 'brightness/buffer')
 
-    # Add color box detection
-    print("Loading brightness detector...")
-    color_to_detect = [int(v) for v in args["--color"].split(",")]
-    add_color_box_detector(vehicle, color_to_detect, [30, 30, 30], 10, 'cam/image_array', 'detect/box')
-
     # RabbitMQ
     print("Log to rabbitmq")
     add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABIITMQ_VIDEO_TOPIC, 'cam/image_array')
@@ -95,7 +88,7 @@ def drive(cfg, args):
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
-    add_logger(vehicle, 'mqtt/mode', 'mqtt/mode')
+    #add_logger(vehicle, 'mqtt/mode', 'mqtt/mode')
     #add_logger(vehicle, 'lidar/distances', 'lidar/distances')
 
     print("Starting vehicle...")
@@ -137,24 +130,23 @@ class KeynoteDriverV2:
                 current_size = 0
         return size <= max_size
 
-    def run(self, user_steering, user_throttle, user_buttons, mq_modes, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
+    def run(self, user_steering, user_throttle, user_buttons, mq_action, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
         if self.is_emergency_mode():
             return 0., self.current_emergency_sequence.pop(), "emergency_stop"
         elif self.safe_mode:
-            if Joystick.SQUARE in user_buttons or mq_modes == "ai":
+            if Joystick.SQUARE in user_buttons or mq_action == "ai":
                 self.safe_mode = False
             return user_steering, user_throttle, "safe_mode"
         else:
-            print(self.has_obstacle(lidar_distances, 140, 220, 1000, 10))
             if (Joystick.CROSS in user_buttons
-                    or mq_modes == "stop"
+                    or mq_action == "stop"
                     or np.sum(exit_buffer) > self.exit_threshold
                     or np.sum(brightness_buffer) < self.brightness_threshold
-                    or self.has_obstacle(lidar_distances, 140, 220, 1000, 10)):
+                    or self.has_obstacle(lidar_distances, 90, 270, 400, 10)):
                 self.initiate_emergency_mode()
-            if Joystick.R1 in user_buttons:
+            if Joystick.R1 in user_buttons or mq_action == "faster":
                 self.current_throttle += 0.01
-            if Joystick.L1 in user_buttons:
+            if Joystick.L1 in user_buttons or mq_action == "slower":
                 self.current_throttle -= 0.01
             return ai_steering, self.current_throttle, "ai_v1_mode"
 

@@ -20,8 +20,7 @@ from donkeycar.parts.transform import Lambda
 
 from xebikart.parts import (add_throttle, add_steering, add_pi_camera, add_logger,
                             add_mqtt_image_base64_publisher, add_mqtt_metadata_publisher,
-                            add_mqtt_remote_mode_subscriber, add_brightness_detector,
-                            add_color_box_detector)
+                            add_mqtt_remote_mode_subscriber, add_brightness_detector)
 from xebikart.parts.tflite import AsyncBufferedAction
 from xebikart.parts.image import ImageTransformation
 from xebikart.parts.joystick import Joystick
@@ -133,37 +132,30 @@ class KeynoteDriverV3:
                 current_size = 0
         return size <= max_size
 
-    def run(self, user_steering, user_throttle, user_buttons, mq_modes, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
+    def run(self, user_steering, user_throttle, user_buttons, mq_action, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
         if self.is_emergency_mode():
             return 0., self.current_emergency_sequence.pop(), "emergency_stop"
         elif self.safe_mode:
-            if Joystick.SQUARE in user_buttons:
+            if Joystick.SQUARE in user_buttons or mq_action == "ai":
                 self.safe_mode = False
             return user_steering, user_throttle, "safe_mode"
         else:
             if (Joystick.CROSS in user_buttons
-                    or mq_modes == "stop"
+                    or mq_action == "stop"
                     or np.sum(exit_buffer) > self.exit_threshold
-                    or np.sum(brightness_buffer) < self.brightness_threshold
-                    or self.has_obstacle(lidar_distances, 90, 270, 400, 10)):
+                    or np.sum(brightness_buffer) < self.brightness_threshold):
                 self.initiate_emergency_mode()
-            if Joystick.R1 in user_buttons:
+            if Joystick.R1 in user_buttons or mq_action == "faster":
                 self.current_throttle += 0.01
-            if Joystick.L1 in user_buttons:
+            if Joystick.L1 in user_buttons or mq_action == "slower":
                 self.current_throttle -= 0.01
 
-            if self.has_obstacle(lidar_distances, 160, 200, 600, 10):
-                print("160-200")
-                #return -1., self.current_throttle, "ai_v2_mode"
-            elif self.has_obstacle(lidar_distances, 200, 240, 600, 10):
-                print("200-240")
-                #return -0.4, self.current_throttle, "ai_v2_mode"
-            elif self.has_obstacle(lidar_distances, 240, 270, 600, 10):
-                print("240-270")
-                #return 0., self.current_throttle, "ai_v2_mode"
-            elif self.has_obstacle(lidar_distances, 270, 300, 600, 10):
-                print("270-300")
-                #return 0.5, self.current_throttle, "ai_v2_mode"
+            #if self.has_obstacle(lidar_distances, 130, 190, 1000, 3):
+            #    return -1., self.current_throttle, "ai_v2_mode"
+            #elif self.has_obstacle(lidar_distances, 190, 220, 600, 3):
+            #    return 0.3, self.current_throttle, "ai_v2_mode"
+            #elif self.has_obstacle(lidar_distances, 220, 280, 400, 3):
+            #    return 1., self.current_throttle, "ai_v2_mode"
             return ai_steering, self.current_throttle, "ai_v2_mode"
 
 
