@@ -170,7 +170,7 @@ class FrameMQTTPublisher(MQTTPublisher):
     def run_threaded(self, frame_base64):
         self.output_queue.put_nowait(json.dumps({
             'car': self.car_id,
-            'frame': frame_base64
+            'frame': frame_base64.decode("utf-8")
         }))
 
 

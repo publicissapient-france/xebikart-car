@@ -6,7 +6,7 @@ def add_mqtt_image_base64_publisher(vehicle, cfg, topic, car_id, camera_input):
     from xebikart.parts.image import EncodeToBase64
 
     encoder = EncodeToBase64()
-    publisher = FrameMQTTPublisher(car_id, cfg=cfg, topic=topic)
+    publisher = FrameMQTTPublisher(car_id, cfg=cfg, topic=topic, publish_delay=0.1)
     vehicle.add(encoder, inputs=[camera_input], outputs=["encoder/base64"])
     vehicle.add(publisher, inputs=["encoder/base64"], threaded=True)
 
@@ -18,7 +18,7 @@ def add_mqtt_metadata_publisher(vehicle, cfg, topic, car_id,
                                 ):
     from xebikart.parts.mqtt import MetadataMQTTPublisher
 
-    mqtt_client = MetadataMQTTPublisher(car_id, cfg=cfg, topic=topic)
+    mqtt_client = MetadataMQTTPublisher(car_id, cfg=cfg, topic=topic, publish_delay=0.1)
     vehicle.add(
         mqtt_client,
         inputs=[
