@@ -92,14 +92,6 @@ def corner_points_to_positions(corner_points):
     return (x_min, y_min)
 
 
-def discrete_measures(measures):
-    angles = [0 for x in range(ANGLES_SLOTS)]
-    for measure in measures:
-        index = int(measure[1] * ANGLES_SLOTS // ANGLE_MAX)
-        angles[index] = max(angles[index], measure[2])
-    return angles
-
-
 def choose_orientation_angles(corner_points, angle):
     xs = [int(x) for (x, y) in corner_points]
     ys = [int(y) for (x, y) in corner_points]
@@ -168,10 +160,14 @@ class LidarPosition:
 class LidarDistances:
 
     def run(self, scan):
-        result = []
         if scan is not None and len(scan) > 0:
-            result = discrete_measures(scan)
-        return result
+            angles = [0] * ANGLES_SLOTS
+            for measure in scan:
+                index = int(measure[1] * ANGLES_SLOTS // ANGLE_MAX)
+                angles[index] = max(angles[index], measure[2])
+            return angles
+        else:
+            return []
 
 
 class LidarDistancesVector(object):
