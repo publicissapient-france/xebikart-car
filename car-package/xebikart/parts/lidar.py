@@ -1,10 +1,11 @@
-import time
 import math
 import serial
 import logging
 from collections import deque
 
-import config
+import time
+
+from operator import itemgetter
 from xebikart.box import MinimumBoundingBox
 from rplidar import RPLidar as rpl
 
@@ -20,22 +21,22 @@ LOCATION_HISTORY_LENGTH = 10
 # These samples were extracted and adapted from donkeycar parts samples. Original version can be found here:
 # https://github.com/autorope/donkeycar/blob/dev/donkeycar/parts/lidar.py
 # donkeycar setup does not automatically include theses parts, not sure why yet...
-
-class RPLidar(object):
+class LidarScan(object):
     '''
     https://github.com/SkoltechRobotics/rplidar
     '''
 
-    def __init__(self, port='/dev/ttyUSB0'):
+    def __init__(self, min_len=ANGLES_SLOTS, port='/dev/ttyUSB0'):
         self.lidar = rpl(port)
         self.lidar.clear_input()
         time.sleep(1)
         self.scan = None
         self.on = True
+        self.min_len = min_len
 
     def update(self):
         while self.on:
-            scans = self.lidar.iter_scans(max_buf_meas=1000, min_len=ANGLES_SLOTS)
+            scans = self.lidar.iter_scans(max_buf_meas=1000, min_len=self.min_len)
             try:
                 for scan in scans:
                     self.scan = scan
@@ -54,7 +55,6 @@ class RPLidar(object):
 
 
 class Location:
-
     def __init__(self, angle, x, y):
         self.angle = angle
         self.x = x
@@ -62,7 +62,6 @@ class Location:
 
 
 class Measure:
-
     def __init__(self, angle, distance):
         self.angle = angle
         self.distance = distance
@@ -167,5 +166,23 @@ class LidarDistances:
             result = discrete_measures(scan)
         return result
 
-    def shutdown(self):
-        self.on = False
+
+class LidarDistancesVector(object):
+
+    def run(self, scan):
+        scan = scan.copy() if scan is not None else [(0., 0., 0.), (0., 1., 0.), (0., 2., 0.)]
+        scan.sort(key=itemgetter(1))
+
+        current_item = scan.pop(0)
+        next_item = scan.pop(0)
+
+        v_distances = []
+
+        for i in range(360):
+            if math.fabs(current_item[1] - i) > math.fabs(next_item[1] - i):
+                current_item = next_item
+                if len(scan) > 0:
+                    next_item = scan.pop(0)
+            v_distances.append(current_item[2])
+
+        return v_distances
