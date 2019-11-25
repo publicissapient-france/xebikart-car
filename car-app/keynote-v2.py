@@ -2,7 +2,7 @@
 
 """
 Usage:
-    keynote-v2.py --steering-model=<steering_model_path> --exit-model=<exit_model_path> [--throttle=<throttle>]
+    keynote-v2.py [--steering-model=<steering_model_path>] [--exit-model=<exit_model_path>] [--throttle=<throttle>]
 
 Options:
     -h --help                    Show this screen.
@@ -11,6 +11,7 @@ Options:
     --throttle=<throttle>        Fix throttle [default: 0.2]
 """
 
+import os
 import logging
 from docopt import docopt
 
@@ -60,11 +61,14 @@ def drive(cfg, args):
     # Steering model
     print("Loading steering model...")
     steering_model_path = args["--steering-model"]
+    steering_model_path = steering_model_path if steering_model_path is not None else os.path.expandvars(
+        "$HOME/models/steering_v2.h5")
     add_steering_model(vehicle, steering_model_path, 'cam/image_array', 'ai/steering')
 
     # Exit model
     print("Loading exit model...")
     exit_model_path = args["--exit-model"]
+    exit_model_path = exit_model_path if exit_model_path is not None else os.path.expandvars("$HOME/models/exit.tflite")
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/buffer')
 
     # Brightness
@@ -82,7 +86,8 @@ def drive(cfg, args):
     # Keynote driver
     print("Loading keynote driver...")
     throttle = float(args["--throttle"])
-    driver = KeynoteDriverV2(default_throttle=throttle, exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
+    driver = KeynoteDriverV2(default_throttle=throttle, max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
+                             exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
     vehicle.add(driver,
                 inputs=['js/steering', 'js/throttle', 'js/actions', 'mqtt/mode', 'ai/steering', 'lidar/distances', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle', 'pilot/mode'])
@@ -90,7 +95,7 @@ def drive(cfg, args):
     add_steering(vehicle, cfg, 'pilot/steering')
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
-    #add_logger(vehicle, 'mqtt/mode', 'mqtt/mode')
+    #add_logger(vehicle, 'pilot/throttle', 'pilot/throttle')
     #add_logger(vehicle, 'lidar/distances', 'lidar/distances')
 
     print("Starting vehicle...")
@@ -101,20 +106,22 @@ def drive(cfg, args):
 
 
 class KeynoteDriverV2:
-    def __init__(self, default_throttle, exit_threshold, brightness_threshold):
+    def __init__(self, default_throttle, max_throttle, exit_threshold, brightness_threshold):
         self.default_throttle = default_throttle
         self.current_throttle = self.default_throttle
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.emergency_sequence = ([-1.] * 5) + ([0.] * 20)
+        self.emergency_sequence = [-max_throttle, 0.01] + ([-max_throttle] * 5) + ([0.] * 20)
         self.current_emergency_sequence = []
         self.safe_mode = True
+        self.user_mode = False
 
     def is_emergency_mode(self):
         return len(self.current_emergency_sequence) > 0
 
     def initiate_emergency_mode(self):
         self.safe_mode = True
+        self.user_mode = False
         self.current_throttle = self.default_throttle
         self.current_emergency_sequence = self.emergency_sequence.copy()
 
@@ -134,23 +141,36 @@ class KeynoteDriverV2:
 
     def run(self, user_steering, user_throttle, user_buttons, mq_action, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
         if self.is_emergency_mode():
-            return 0., self.current_emergency_sequence.pop(), "emergency_stop"
+            return 0., self.current_emergency_sequence.pop(0), "emergency_stop"
         elif self.safe_mode:
-            if Joystick.SQUARE in user_buttons or mq_action == "ai":
+            if Joystick.SQUARE in user_buttons:
                 self.safe_mode = False
+                self.user_mode = True
+            elif mq_action == "ai":
+                self.safe_mode = False
+                self.user_mode = False
             return user_steering, user_throttle, "safe_mode"
-        else:
+        elif not self.user_mode:
             if (Joystick.CROSS in user_buttons
                     or mq_action == "stop"
                     or np.sum(exit_buffer) > self.exit_threshold
                     or np.sum(brightness_buffer) < self.brightness_threshold
-                    or self.has_obstacle(lidar_distances, 90, 270, 400, 10)):
+                    or self.has_obstacle(lidar_distances, 135, 225, 600, 3)):
                 self.initiate_emergency_mode()
             if Joystick.R1 in user_buttons or mq_action == "faster":
                 self.current_throttle += 0.01
             if Joystick.L1 in user_buttons or mq_action == "slower":
                 self.current_throttle -= 0.01
             return ai_steering, self.current_throttle, "ai_v1_mode"
+        elif self.user_mode:
+            if Joystick.SELECT in user_buttons:
+                self.user_mode = False
+            if (Joystick.CROSS in user_buttons
+                    or mq_action == "stop"
+                    or np.sum(exit_buffer) > 0.5
+                    or np.sum(brightness_buffer) < self.brightness_threshold):
+                self.initiate_emergency_mode()
+            return user_steering, user_throttle, "user"
 
 
 def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
@@ -161,7 +181,7 @@ def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=4.)
+    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=20.)
     vehicle.add(exit_model, inputs=['exit/_image'], outputs=[exit_model_output], threaded=True)
 
 

@@ -24,6 +24,8 @@ import xebikart.images.transformer as image_transformer
 
 import tensorflow as tf
 
+import numpy as np
+
 tf.compat.v1.enable_eager_execution()
 
 
@@ -40,10 +42,13 @@ def drive(cfg, args):
     throttle = float(args["--throttle"])
     add_model(vehicle, model_path, throttle, 'cam/image_array', 'ai/steering', 'ai/throttle')
 
-    add_steering(vehicle, cfg, 'ai/steering')
-    add_throttle(vehicle, cfg, 'ai/throttle')
+    clip_throttle = Lambda(lambda x: np.clip(x, 0.18, 0.25))
+    vehicle.add(clip_throttle, inputs=['ai/throttle'], outputs=['ai/_throttle'])
 
-    #add_logger(vehicle, 'detect/_sum', 'detect/_sum')
+    add_steering(vehicle, cfg, 'ai/steering')
+    add_throttle(vehicle, cfg, 'ai/_throttle')
+
+    add_logger(vehicle, 'ai/throttle', 'ai/throttle')
     #add_logger(vehicle, 'exit/_sum', 'exit/_sum')
 
     print("Starting vehicle...")
@@ -62,11 +67,12 @@ def add_model(vehicle, model_path, static_throttle, camera_input, ai_steering_ou
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['ai/_image'])
     # Predict on transformed image
     model = OneOutputModel()
+    model = PilotModel()
     model.load(model_path)
-    vehicle.add(model, inputs=['ai/_image'], outputs=[ai_steering_output])
+    vehicle.add(model, inputs=['ai/_image'], outputs=[ai_steering_output, ai_throttle_output])
     # Add static throttle
-    throttle_lambda = Lambda(lambda: static_throttle)
-    vehicle.add(throttle_lambda, outputs=[ai_throttle_output])
+    #throttle_lambda = Lambda(lambda: static_throttle)
+    #vehicle.add(throttle_lambda, outputs=[ai_throttle_output])
 
 
 if __name__ == '__main__':
