@@ -163,7 +163,7 @@ class KeynoteDriverV2:
                 self.current_throttle -= 0.01
             return ai_steering, self.current_throttle, "ai_v1_mode"
         elif self.user_mode:
-            if Joystick.SELECT in user_buttons:
+            if Joystick.SELECT in user_buttons or mq_action == "ai":
                 self.user_mode = False
             if (Joystick.CROSS in user_buttons
                     or mq_action == "stop"
