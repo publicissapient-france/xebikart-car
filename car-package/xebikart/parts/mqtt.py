@@ -1,9 +1,9 @@
 import json
-import time
-import paho.mqtt.client as mqtt
 import logging
 import queue
-from xebikart.parts.lidar import Location
+import time
+
+import paho.mqtt.client as mqtt
 
 
 class MQTTClient:
@@ -65,11 +65,11 @@ class MQTTClient:
                 "angle": user_angle,
                 "throttle": user_throttle
             },
+            'angle': location[0],
             'position': {
-                'x': location.x,
-                'y': location.y
+                'x': location[1],
+                'y': location[2]
             },
-            'angle': location.angle,
             'borders': borders
         }
         if self.input_payload is not None:
@@ -186,7 +186,7 @@ class MetadataMQTTPublisher(MQTTPublisher):
          # from lidar
          location, borders) = args
         if location is None:
-            location = Location(x=0, y=0, angle=0)
+            location = (0, 0, 0)
         self.output_queue.put_nowait(json.dumps({
             'car': self.car_id,
             'mode': mode,
@@ -194,11 +194,11 @@ class MetadataMQTTPublisher(MQTTPublisher):
                 "angle": user_angle,
                 "throttle": user_throttle
             },
+            'angle': location[0],
             'position': {
-                'x': location.x,
-                'y': location.y
+                'x': location[1],
+                'y': location[2]
             },
-            'angle': location.angle,
             'borders': borders
         }))
 
