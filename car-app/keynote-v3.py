@@ -173,7 +173,7 @@ def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=4.)
+    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=20.)
     vehicle.add(exit_model, inputs=['exit/_image'], outputs=[exit_model_output], threaded=True)
 
 
