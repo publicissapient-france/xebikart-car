@@ -1,24 +1,19 @@
-import math
-import serial
 import logging
-from collections import deque
-
+import math
 import time
-
+from collections import deque
 from operator import itemgetter
-from xebikart.box import MinimumBoundingBox
+
+import serial
 from rplidar import RPLidar as rpl
+from xebikart.box import MinimumBoundingBox
 
-ANGLES_SLOTS = 36
+ANGLE_SLOTS = 36
 ANGLE_MAX = 360
-ANGLES_NORTH_SLOT = 0  # index for northern angle
-ANGLES_SOUTH_SLOT = ANGLES_SLOTS // 2  # shift in index to retrieve southern angle
-ANGLES_EAST_SLOT = ANGLES_SLOTS // 4  # shift in index to retrieve eastern angle
-ANGLES_WEST_SLOT = ANGLES_EAST_SLOT + ANGLES_SOUTH_SLOT  # shift in index to retrieve western angle
+ANGLE_HISTORY_LENGTH = 10
 
-LOCATION_HISTORY_LENGTH = 10
 
-# These samples were extracted and adapted from donkeycar parts samples. Original version can be found here:
+# These sample was extracted and adapted from donkeycar parts samples. Original version can be found here:
 # https://github.com/autorope/donkeycar/blob/dev/donkeycar/parts/lidar.py
 # donkeycar setup does not automatically include theses parts, not sure why yet...
 class LidarScan(object):
@@ -26,13 +21,13 @@ class LidarScan(object):
     https://github.com/SkoltechRobotics/rplidar
     '''
 
-    def __init__(self, min_len=ANGLES_SLOTS, port='/dev/ttyUSB0'):
+    def __init__(self, min_len=ANGLE_SLOTS, port='/dev/ttyUSB0'):
         self.lidar = rpl(port)
         self.lidar.clear_input()
-        time.sleep(1)
         self.scan = None
         self.on = True
         self.min_len = min_len
+        time.sleep(1)
 
     def update(self):
         while self.on:
@@ -54,105 +49,87 @@ class LidarScan(object):
         self.lidar.disconnect()
 
 
-class Location:
-    def __init__(self, angle, x, y):
-        self.angle = angle
-        self.x = x
-        self.y = y
-
-
-class Measure:
-    def __init__(self, angle, distance):
-        self.angle = angle
-        self.distance = distance
-
-
-def measures_to_positions(measures):
-    return [
-        (
-            int(measure.distance * math.sin(math.radians(measure.angle))),
-            int(measure.distance * math.cos(math.radians(measure.angle)))
-        ) for measure in measures
-    ]
-
-
-def rotate(point, angle):
-    rotation_angle = -angle
-    x, y = point
-    rotated_x = (math.cos(rotation_angle) * x) - (math.sin(rotation_angle) * y)
-    rotated_y = (math.sin(rotation_angle) * x) + (math.cos(rotation_angle) * y)
-    return rotated_x, rotated_y
-
-
-def corner_points_to_positions(corner_points):
-    xs = [int(x) for (x, y) in corner_points]
-    ys = [int(y) for (x, y) in corner_points]
-    x_min = abs(min(xs))
-    y_min = abs(min(ys))
-    x_max = max(xs)
-    y_max = max(ys)
-    return (x_min, y_min), (x_max, y_max)
-
-
-def next_location(location_history, positions, raw_angle):
-    (position1, position2) = positions
-    sum_for_position1 = 0
-    sum_for_position2 = 0
-    for previous_location in location_history:
-        previous_position = (previous_location.x, previous_location.y)
-        sum_for_position1 += distance(position1, previous_position)
-        sum_for_position2 += distance(position2, previous_position)
-    next_position = position1 if sum_for_position1 < sum_for_position2 else position2
-    next_angle = int(math.degrees(raw_angle) % 360)
-    return Location(next_angle, next_position[0], next_position[1])
-
-
-def distance(p1, p2):
-    (x1, y1) = p1
-    (x2, y2) = p2
-    return ((x1 - x2) ** 2) + ((y1 - y2) ** 2)
-
-
-def discrete_measures(measures):
-    angles = [0 for x in range(ANGLES_SLOTS)]
-    for measure in measures:
-        index = int(measure[1] * ANGLES_SLOTS // ANGLE_MAX)
-        angles[index] = max(angles[index], measure[2])
-    return angles
-
-
 class LidarPosition:
 
-    def __init__(self):
+    def __init__(self, refresh_time_in_seconds=1):
         self.measures = []
-        self.location_history = deque([])
-        self.location = Location(angle=0, x=0, y=0)
+        self.angle_history = deque([])
+        self.position = (0, 0, 0)
         self.border_positions = []
+        self.refresh_time_in_seconds = refresh_time_in_seconds
         self.on = True
+
+    def choose_angle(self, corner_points, angle):
+        xs = [int(x) for (x, y) in corner_points]
+        ys = [int(y) for (x, y) in corner_points]
+        x_min, x_max = min(xs), max(xs)
+        y_min, y_max = min(ys), max(ys)
+
+        if x_max - x_min > y_max - y_min:
+            angles = (angle + 90) % 360, (angle + 270) % 360
+        else:
+            angles = (angle % 360), (angle + 180) % 360
+
+        (angle1, angle2) = angles
+        angle_delta_sum1 = 0
+        angle_delta_sum2 = 0
+        for previous_angle in self.angle_history:
+            angle_delta_sum1 += abs((angle1 - previous_angle + 180) % 360 - 180)
+            angle_delta_sum2 += abs((angle2 - previous_angle + 180) % 360 - 180)
+
+        return angle1 if angle_delta_sum1 < angle_delta_sum2 else angle2
+
+    def measures_to_positions(self):
+        return [
+            (
+                int(distance * math.sin(math.radians(angle))),
+                int(distance * math.cos(math.radians(angle)))
+            ) for (angle, distance) in self.measures
+        ]
+
+    def rotate(self, point, angle):
+        rotation_angle = math.radians(-angle)
+        x, y = point
+        rotated_x = int((math.cos(rotation_angle) * x) - (math.sin(rotation_angle) * y))
+        rotated_y = int((math.sin(rotation_angle) * x) + (math.cos(rotation_angle) * y))
+        return rotated_x, rotated_y
+
+    def corner_points_to_position(self, corner_points):
+        xs = [int(x) for (x, y) in corner_points]
+        ys = [int(y) for (x, y) in corner_points]
+        x_min = abs(min(xs))
+        y_min = abs(min(ys))
+        return (x_min, y_min)
 
     def update(self):
         while self.on:
-            time.sleep(1)
+            time.sleep(self.refresh_time_in_seconds)
             if len(self.measures) < 1:
                 continue
-            positions = measures_to_positions(self.measures)
-            self.border_positions = [[x, y] for (x, y) in positions]
+
+            positions = self.measures_to_positions()
+
             bounding_box = MinimumBoundingBox(positions)
-            bounding_box_angle = bounding_box.unit_vector_angle
-            rotated_corner_points = [rotate(point, bounding_box_angle) for point in bounding_box.corner_points]
-            positions = corner_points_to_positions(rotated_corner_points)
-            self.location = next_location(self.location_history, positions, bounding_box_angle)
-            self.location_history.append(self.location)
-            if len(self.location_history) > LOCATION_HISTORY_LENGTH:
-                self.location_history.popleft()
+            bounding_box_angle = math.degrees(bounding_box.unit_vector_angle) % 360
+            corner_points = [self.rotate(point, bounding_box_angle) for point in bounding_box.corner_points]
+            angle = self.choose_angle(corner_points, bounding_box_angle)
+
+            rotated_corner_points = [self.rotate(point, angle) for point in bounding_box.corner_points]
+            position = self.corner_points_to_position(rotated_corner_points)
+
+            self.border_positions = [[x, y] for (x, y) in positions]
+            self.position = (angle, position[0], position[1])
+            self.angle_history.append(angle)
+            if len(self.angle_history) > ANGLE_HISTORY_LENGTH:
+                self.angle_history.popleft()
 
     def run_threaded(self, scan):
         return self.run(scan)
 
     def run(self, scan):
         if scan is not None and len(scan) > 0:
-            self.measures = list(map(lambda item: Measure(item[1], item[2]), scan))
-        return self.location, self.border_positions
+            self.measures = list(map(lambda item: (item[1], item[2]), scan))
+        return self.position, self.border_positions
 
     def shutdown(self):
         self.on = False
@@ -161,10 +138,14 @@ class LidarPosition:
 class LidarDistances:
 
     def run(self, scan):
-        result = []
         if scan is not None and len(scan) > 0:
-            result = discrete_measures(scan)
-        return result
+            angles = [0] * ANGLE_SLOTS
+            for measure in scan:
+                index = int(measure[1] * ANGLE_SLOTS // ANGLE_MAX)
+                angles[index] = max(angles[index], measure[2])
+            return angles
+        else:
+            return []
 
 
 class LidarDistancesVector(object):

@@ -9,19 +9,16 @@ Options:
     --tub TUBPATHS   List of paths to tubs. Comma separated. Use quotes to use wildcards. ie "~/tubs/*"
 """
 
-import os
 import logging
 from docopt import docopt
 
 import donkeycar as dk
 from donkeycar.parts.camera import PiCamera
-from donkeycar.parts.keras import KerasLinear
 from donkeycar.parts.actuator import PCA9685, PWMSteering, PWMThrottle
-from donkeycar.parts.datastore import TubWriter
 from donkeycar.parts.clock import Timestamp
 from donkeypart_ps3_controller import PS3JoystickController
 
-from xebikart.parts.lidar import RPLidar, LidarPosition
+from xebikart.parts.lidar import LidarScan, LidarPosition
 from xebikart.parts.mqtt import MQTTClient
 
 
@@ -86,7 +83,7 @@ def drive(cfg, model_path=None):
         ]
     )
 
-    lidar = RPLidar()
+    lidar = LidarScan()
     vehicle.add(
         lidar,
         outputs=[
