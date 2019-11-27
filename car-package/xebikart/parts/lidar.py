@@ -51,7 +51,7 @@ class LidarScan(object):
 
 class LidarPosition:
 
-    def __init__(self, refresh_time_in_seconds=1):
+    def __init__(self, refresh_time_in_seconds=0.5):
         self.measures = []
         self.angle_history = deque([])
         self.position = (0, 0, 0)
