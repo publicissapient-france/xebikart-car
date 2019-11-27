@@ -65,7 +65,7 @@ def drive(cfg, args):
     add_throttle(vehicle, cfg, 'pilot/throttle')
 
     print("Log to rabbitmq")
-    add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABIITMQ_VIDEO_TOPIC, cfg.CAR_ID, 'cam/image_array')
+    add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABBITMQ_VIDEO_TOPIC, cfg.CAR_ID, 'cam/image_array')
     add_mqtt_metadata_publisher(vehicle, cfg, cfg.RABBITMQ_TOPIC, cfg.CAR_ID,
                                 steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode")
     add_mqtt_remote_mode_subscriber(vehicle, cfg, cfg.RABBITMQ_MODES_TOPIC, cfg.CAR_ID, 'mqtt/mode')

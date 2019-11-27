@@ -16,9 +16,12 @@ class OneOutputModel(KerasLinear):
 
 
 class PilotModel(KerasLinear):
-    def run(self, img_arr):
-        img_arr = tf.expand_dims(img_arr, axis=0)
-        pilot_prediction = self.model.predict(img_arr)
+    def run(self, *args):
+        if len(args) == 1:
+            inputs = tf.expand_dims(args[0], axis=0)
+        else:
+            inputs = [tf.expand_dims(arg, axis=0) for arg in args]
+        pilot_prediction = self.model.predict(inputs)
         pilot_prediction = tf.squeeze(pilot_prediction, axis=0)
         steering = pilot_prediction[0].numpy().item()
         throttle = pilot_prediction[1].numpy().item()

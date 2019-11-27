@@ -2,16 +2,16 @@
 
 """
 Usage:
-    keynote-v3.py --steering-model=<steering_model_path> --exit-model=<exit_model_path> [--color=<color>] [--throttle=<throttle>]
+    keynote-v3.py [--steering-model=<steering_model_path>] [--exit-model=<exit_model_path>] [--throttle=<throttle>]
 
 Options:
     -h --help                    Show this screen.
     --steering-model=<path>      Path to h5 model (steering only) (.h5)
     --exit-model=<path>          Path to tflite model (exit) (.tflite)
-    --color=<color>              Color to detect in picture [default: 187,133,101]
     --throttle=<throttle>        Fix throttle [default: 0.2]
 """
 
+import os
 import logging
 from docopt import docopt
 
@@ -62,11 +62,14 @@ def drive(cfg, args):
     # Steering model
     print("Loading steering model...")
     steering_model_path = args["--steering-model"]
+    steering_model_path = steering_model_path if steering_model_path is not None else os.path.expandvars(
+        "$HOME/models/steering_v3.h5")
     add_steering_model(vehicle, steering_model_path, 600, 'cam/image_array', 'lidar/distances', 'ai/steering')
 
     # Exit model
     print("Loading exit model...")
     exit_model_path = args["--exit-model"]
+    exit_model_path = exit_model_path if exit_model_path is not None else os.path.expandvars("$HOME/models/exit.tflite")
     add_exit_model(vehicle, exit_model_path, 'cam/image_array', 'exit/buffer')
 
     # Brightness
@@ -76,7 +79,7 @@ def drive(cfg, args):
 
     # RabbitMQ
     print("Log to rabbitmq")
-    add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABIITMQ_VIDEO_TOPIC, cfg.CAR_ID, 'cam/image_array')
+    add_mqtt_image_base64_publisher(vehicle, cfg, cfg.RABBITMQ_VIDEO_TOPIC, cfg.CAR_ID, 'cam/image_array')
     add_mqtt_metadata_publisher(vehicle, cfg, cfg.RABBITMQ_TOPIC, cfg.CAR_ID,
                                 steering="pilot/steering", throttle="pilot/throttle", mode="pilot/mode")
     add_mqtt_remote_mode_subscriber(vehicle, cfg, cfg.RABBITMQ_MODES_TOPIC, cfg.CAR_ID, 'mqtt/mode')
@@ -84,7 +87,8 @@ def drive(cfg, args):
     # Keynote driver
     print("Loading keynote driver...")
     throttle = float(args["--throttle"])
-    driver = KeynoteDriverV3(default_throttle=throttle, exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
+    driver = KeynoteDriverV3(default_throttle=throttle, max_throttle=cfg.JOYSTICK_MAX_THROTTLE,
+                             exit_threshold=1., brightness_threshold=50000 * brightness_buffer_size)
     vehicle.add(driver,
                 inputs=['js/steering', 'js/throttle', 'js/actions', 'mqtt/mode', 'ai/steering', 'lidar/distances', 'exit/buffer', 'brightness/buffer'],
                 outputs=['pilot/steering', 'pilot/throttle', 'pilot/mode'])
@@ -103,12 +107,12 @@ def drive(cfg, args):
 
 
 class KeynoteDriverV3:
-    def __init__(self, default_throttle, exit_threshold, brightness_threshold):
+    def __init__(self, default_throttle, max_throttle, exit_threshold, brightness_threshold):
         self.default_throttle = default_throttle
         self.current_throttle = self.default_throttle
         self.exit_threshold = exit_threshold
         self.brightness_threshold = brightness_threshold
-        self.emergency_sequence = ([-1.] * 5) + ([0.] * 20)
+        self.emergency_sequence = [-max_throttle, 0.01] + ([-max_throttle] * 5) + ([0.] * 20)
         self.current_emergency_sequence = []
         self.safe_mode = True
 
@@ -136,7 +140,7 @@ class KeynoteDriverV3:
 
     def run(self, user_steering, user_throttle, user_buttons, mq_action, ai_steering, lidar_distances, exit_buffer, brightness_buffer):
         if self.is_emergency_mode():
-            return 0., self.current_emergency_sequence.pop(), "emergency_stop"
+            return 0., self.current_emergency_sequence.pop(0), "emergency_stop"
         elif self.safe_mode:
             if Joystick.SQUARE in user_buttons or mq_action == "ai":
                 self.safe_mode = False
@@ -169,7 +173,7 @@ def add_exit_model(vehicle, exit_model_path, camera_input, exit_model_output):
     ])
     vehicle.add(image_transformation, inputs=[camera_input], outputs=['exit/_image'])
     # Predict on transformed image
-    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=4.)
+    exit_model = AsyncBufferedAction(model_path=exit_model_path, buffer_size=4, rate_hz=20.)
     vehicle.add(exit_model, inputs=['exit/_image'], outputs=[exit_model_output], threaded=True)
 
 
