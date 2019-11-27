@@ -48,4 +48,4 @@ RABBITMQ_HOST = "localhost"
 RABBITMQ_PORT = 1883
 RABBITMQ_TOPIC = "xebikart-events"
 RABBITMQ_MODES_TOPIC = "xebikart-modes"
-RABIITMQ_VIDEO_TOPIC = "xebikart-car-video"
+RABBITMQ_VIDEO_TOPIC = "xebikart-car-video"
